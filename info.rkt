@@ -3,7 +3,7 @@
 (define deps '("base"
                "rackunit-lib"
                "phc-toolkit"
-               "phc-adt"
+               "https://github.com/jsmaniac/phc-adt.git"
                "type-expander"
                "hyper-literate"
                "scribble-enhanced"
