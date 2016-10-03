@@ -125,8 +125,8 @@ way up, so that a simple identity function can be applied in these cases.
 @chunk[<define-fold>
        (define-syntax define-fold
          (syntax-parser
-           [(_ function-name:id
-               type-name:id
+           [(_ _function-name:id
+               _type-name:id
                whole-type:type
                type-to-replaceᵢ:type …)
             <define-fold-prepare>
@@ -135,24 +135,24 @@ way up, so that a simple identity function can be applied in these cases.
                <define-fold-result>))]))]
 
 @chunk[<define-fold-prepare>
-       (define-temp-ids "Tᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "Aᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "Bᵢ" (type-to-replaceᵢ …))
+       (define-temp-ids "_Tᵢ" (type-to-replaceᵢ …))
+       (define-temp-ids "_Aᵢ" (type-to-replaceᵢ …))
+       (define-temp-ids "_Bᵢ" (type-to-replaceᵢ …))
        (define-temp-ids "predicateᵢ" (type-to-replaceᵢ …))
        (define-temp-ids "updateᵢ" (type-to-replaceᵢ …))
 
-       (define/with-syntax args (template ({?@ predicateᵢ updateᵢ} …)))]
+       (define/with-syntax _args (template ({?@ predicateᵢ updateᵢ} …)))]
 
 @chunk[<define-fold-prepare>
        (type-cases
-        (whole-type => the-type the-code the-defs …)
+        (whole-type => _the-type _the-code the-defs …)
         #:literals (Null Pairof Listof List Vectorof Vector)
         <type-cases>)]
 
 @chunk[<type-cases>
        [t
         #:with info (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
-                           (syntax->list #'([type-to-replaceᵢ updateᵢ Tᵢ] …)))
+                           (syntax->list #'([type-to-replaceᵢ updateᵢ _Tᵢ] …)))
         #:when (attribute info)
         #:with (_ update T) #'info
         => T
@@ -165,32 +165,32 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<type-cases>
        [(Pairof X Y)
-        => (Pairof (tx Tᵢ …) (ty Tᵢ …))
-        (let*-values ([(result-x acc-x) ((fx . args) (car v) acc)]
-                      [(result-y acc-y) ((fy . args) (cdr v) acc-x)])
+        => (Pairof (tx _Tᵢ …) (ty _Tᵢ …))
+        (let*-values ([(result-x acc-x) ((fx . _args) (car v) acc)]
+                      [(result-y acc-y) ((fy . _args) (cdr v) acc-x)])
           (values (cons result-x result-y) acc-y))
         (define-fold fx tx X type-to-replaceᵢ …)
         (define-fold fy ty Y type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
        [(Listof X)
-        => (Listof (te Tᵢ …))
-        (foldl-map (fe . args) acc v)
+        => (Listof (te _Tᵢ …))
+        (foldl-map (fe . _args) acc v)
         (define-fold fe te X type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
        [(Vectorof X)
-        => (Vectorof (te Tᵢ …))
+        => (Vectorof (te _Tᵢ …))
         (vector->immutable-vector
          (list->vector
-          (foldl-map (fe . args) acc (vector->list v))))
+          (foldl-map (fe . _args) acc (vector->list v))))
         (define-fold fe te X type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
        [(List X Y ...)
-        => (Pairof (tx Tᵢ …) (ty* Tᵢ …))
-        (let*-values ([(result-x acc-x) ((fx . args) (car v) acc)]
-                      [(result-y* acc-y*) ((fy* . args) (cdr v) acc-x)])
+        => (Pairof (tx _Tᵢ …) (ty* _Tᵢ …))
+        (let*-values ([(result-x acc-x) ((fx . _args) (car v) acc)]
+                      [(result-y* acc-y*) ((fy* . _args) (cdr v) acc-x)])
           (values (cons result-x result-y*) acc-y*))
         (define-fold fx tx X type-to-replaceᵢ …)
         (define-fold fy* ty* (List Y ...) type-to-replaceᵢ …)]]
@@ -235,18 +235,18 @@ where @racket[foldl-map] is defined as:
 @chunk[<define-fold-result>
        the-defs …
 
-       (define-type (type-name Tᵢ …) the-type)
+       (define-type (_type-name _Tᵢ …) _the-type)
 
-       (: function-name (∀ (Aᵢ … Bᵢ … Acc)
-                           (→ {?@ (→ Any Boolean : Aᵢ)
-        (→ Aᵢ Acc (Values Bᵢ Acc))}
+       (: _function-name (∀ (_Aᵢ … _Bᵢ … Acc)
+                           (→ (?@ (→ Any Boolean : _Aᵢ)
+                                  (→ _Aᵢ Acc (Values _Bᵢ Acc)))
                               …
-                              (→ (type-name Aᵢ …)
+                              (→ (_type-name _Aᵢ …)
                                  Acc
-                                 (Values (type-name Bᵢ …)
+                                 (Values (_type-name _Bᵢ …)
                                          Acc)))))
-       (define ((function-name . args) v acc)
-         the-code)]
+       (define ((_function-name . _args) v acc)
+         _the-code)]
 
 @section{Putting it all together}
 
