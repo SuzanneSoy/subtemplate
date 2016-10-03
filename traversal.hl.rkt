@@ -145,8 +145,10 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<define-fold-prepare>
        (type-cases
-        (whole-type => _the-type _the-code the-defs …)
-        #:literals (Null Pairof Listof List Vectorof Vector)
+        (whole-type #:to _the-type
+                    #:using _the-code
+                    #:with-defintitions the-defs …)
+        #:literals (Null Pairof Listof List Vectorof Vector U tagged)
         <type-cases>)]
 
 @chunk[<type-cases>
@@ -155,49 +157,120 @@ way up, so that a simple identity function can be applied in these cases.
                            (syntax->list #'([type-to-replaceᵢ updateᵢ _Tᵢ] …)))
         #:when (attribute info)
         #:with (_ update T) #'info
-        => T
+
+        #:to
+        T
+
+        #:using
         (update v acc)]]
 
 @chunk[<type-cases>
        [(~or Null (List))
-        => Null
+
+        #:to
+        Null
+
+        #:using
         (values v acc)]]
 
 @chunk[<type-cases>
        [(Pairof X Y)
-        => (Pairof (tx _Tᵢ …) (ty _Tᵢ …))
+
+        #:to
+        (Pairof (tx _Tᵢ …) (ty _Tᵢ …))
+
+        #:using
         (let*-values ([(result-x acc-x) ((fx . _args) (car v) acc)]
                       [(result-y acc-y) ((fy . _args) (cdr v) acc-x)])
           (values (cons result-x result-y) acc-y))
+
+        #:with-defintitions
         (define-fold fx tx X type-to-replaceᵢ …)
         (define-fold fy ty Y type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
        [(Listof X)
-        => (Listof (te _Tᵢ …))
+
+        #:to
+        (Listof (te _Tᵢ …))
+
+        #:using
         (foldl-map (fe . _args) acc v)
+
+        #:with-defintitions
         (define-fold fe te X type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
        [(Vectorof X)
-        => (Vectorof (te _Tᵢ …))
+
+        #:to
+        (Vectorof (te _Tᵢ …))
+
+        #:using
         (vector->immutable-vector
          (list->vector
           (foldl-map (fe . _args) acc (vector->list v))))
+
+        #:with-defintitions
         (define-fold fe te X type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
-       [(List X Y ...)
-        => (Pairof (tx _Tᵢ …) (ty* _Tᵢ …))
+       [(List X Y …)
+
+        #:to
+        (Pairof (tx _Tᵢ …) (ty* _Tᵢ …))
+
+        #:using
         (let*-values ([(result-x acc-x) ((fx . _args) (car v) acc)]
                       [(result-y* acc-y*) ((fy* . _args) (cdr v) acc-x)])
           (values (cons result-x result-y*) acc-y*))
+
+        #:with-defintitions
         (define-fold fx tx X type-to-replaceᵢ …)
-        (define-fold fy* ty* (List Y ...) type-to-replaceᵢ …)]]
+        (define-fold fy* ty* (List Y …) type-to-replaceᵢ …)]]
+
+@chunk[<type-cases>
+       [(U X …)
+
+        #:to
+        (U (tx _Tᵢ …))
+
+        #:using
+        (dispatch-union ([type-to-replaceᵢ Aᵢ predicateᵢ]
+                         …)
+                        [X v ((fx . _args) v acc)]
+                        …)
+
+        #:with-defintitions
+        (define-fold fx tx X type-to-replaceᵢ …)
+        …]]
+
+@chunk[<type-cases>
+       [(tagged _name [_field (~optional :colon) _X] …
+                {~do (define-temp-ids "_fx" (_X …))}
+                {~do (define-temp-ids "_tx" (_X …))}
+                {~do (define-temp-ids "_result" (_X …))})
+
+        #:to
+        (tagged _name [_field : (_tx _Tᵢ …)] …)
+
+        #:using
+        (let*-values ([(_result acc) ((_fx . _args) (uniform-get v _field) acc)]
+                      …)
+          (values (tagged _name [_field _result] …)
+                  acc))
+
+        #:with-defintitions
+        (define-fold _fx _tx _X type-to-replaceᵢ …)
+        …]]
 
 @chunk[<type-cases>
        [else-T
-        => else-T
+
+        #:to
+        else-T
+
+        #:using
         (values v acc)]]
 
 where @racket[foldl-map] is defined as:
@@ -219,17 +292,22 @@ where @racket[foldl-map] is defined as:
 @chunk[<type-cases-macro>
        (define-syntax type-cases
          (syntax-parser
-           #:literals (=>)
-           [(_ (whole-type => the-type the-code the-defs (~literal …))
+           [(_ (whole-type #:to the-type
+                           #:using the-code
+                           #:with-defintitions the-defs (~literal …))
                #:literals (lit …)
-               (Pat opts … => transform-type transform-code transform-defs …)
+               (Pat opts …
+                    #:to transform-type
+                    #:using transform-code
+                    (~optional (~seq #:with-defintitions transform-defs …)
+                               #:defaults ([(transform-defs 1) (list)])))
                …)
             #'(define/with-syntax (the-type the-code the-defs (… …))
                 (syntax-parse #'whole-type
                   #:literals (lit …)
                   [Pat opts …
                    (template
-                        (transform-type transform-code transform-defs …))]
+                    (transform-type transform-code transform-defs …))]
                   …))]))]
 
 @chunk[<define-fold-result>
@@ -238,13 +316,13 @@ where @racket[foldl-map] is defined as:
        (define-type (_type-name _Tᵢ …) _the-type)
 
        (: _function-name (∀ (_Aᵢ … _Bᵢ … Acc)
-                           (→ (?@ (→ Any Boolean : _Aᵢ)
-                                  (→ _Aᵢ Acc (Values _Bᵢ Acc)))
-                              …
-                              (→ (_type-name _Aᵢ …)
-                                 Acc
-                                 (Values (_type-name _Bᵢ …)
-                                         Acc)))))
+                            (→ (?@ (→ Any Boolean : _Aᵢ)
+                                   (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                               …
+                               (→ (_type-name _Aᵢ …)
+                                  Acc
+                                  (Values (_type-name _Bᵢ …)
+                                          Acc)))))
        (define ((_function-name . _args) v acc)
          _the-code)]
 
@@ -252,6 +330,8 @@ where @racket[foldl-map] is defined as:
 
 @chunk[<*>
        (require phc-toolkit
+                type-expander
+                phc-adt
                 (for-syntax racket/base
                             phc-toolkit/untyped
                             racket/syntax

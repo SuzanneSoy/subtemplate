@@ -10,11 +10,11 @@
 
 (define-syntax check-equal?-values:
   (syntax-parser
-    [(_ actual {~maybe :colon type} expected ...)
+    [(_ actual {~maybe :colon type:type-expand!} expected ...)
      (quasisyntax/top-loc this-syntax
        (check-equal?: (call-with-values (ann (λ () actual)
                                              (-> #,(if (attribute type)
-                                                       #'type
+                                                       #'type.expanded
                                                        #'AnyValues)))
                                         (λ l l))
                       (list expected ...)))]))
