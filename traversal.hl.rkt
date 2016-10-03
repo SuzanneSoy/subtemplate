@@ -139,19 +139,98 @@ way up, so that a simple identity function can be applied in these cases.
        (define-temp-ids "Aᵢ" (type-to-replaceᵢ …))
        (define-temp-ids "Bᵢ" (type-to-replaceᵢ …))
        (define-temp-ids "predicateᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "updateᵢ" (type-to-replaceᵢ …))]
+       (define-temp-ids "updateᵢ" (type-to-replaceᵢ …))
+
+       (define/with-syntax args (template ({?@ predicateᵢ updateᵢ} …)))]
 
 @chunk[<define-fold-prepare>
-       (define/with-syntax (the-type the-code the-defs …)
-         (syntax-parse #'whole-type
-           #:literals (Null Pairof Listof List Vectorof Vector)
-           [Null #'(Null (values v acc))]
-           [(Pairof X Y)
-            #'(Null
-               (values v acc)
-               (define-fold fx tx X type-to-replaceᵢ …)
-               (define-fold fy ty Y type-to-replaceᵢ …))]
-           [#t #'((Pairof Any Any) (void))]))]
+       (type-cases
+        (whole-type => the-type the-code the-defs …)
+        #:literals (Null Pairof Listof List Vectorof Vector)
+        <type-cases>)]
+
+@chunk[<type-cases>
+       [t
+        #:with info (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
+                           (syntax->list #'([type-to-replaceᵢ updateᵢ Tᵢ] …)))
+        #:when (attribute info)
+        #:with (_ update T) #'info
+        => T
+        (update v acc)]]
+
+@chunk[<type-cases>
+       [(~or Null (List))
+        => Null
+        (values v acc)]]
+
+@chunk[<type-cases>
+       [(Pairof X Y)
+        => (Pairof (tx Tᵢ …) (ty Tᵢ …))
+        (let*-values ([(result-x acc-x) ((fx . args) (car v) acc)]
+                      [(result-y acc-y) ((fy . args) (cdr v) acc-x)])
+          (values (cons result-x result-y) acc-y))
+        (define-fold fx tx X type-to-replaceᵢ …)
+        (define-fold fy ty Y type-to-replaceᵢ …)]]
+
+@chunk[<type-cases>
+       [(Listof X)
+        => (Listof (te Tᵢ …))
+        (foldl-map (fe . args) acc v)
+        (define-fold fe te X type-to-replaceᵢ …)]]
+
+@chunk[<type-cases>
+       [(Vectorof X)
+        => (Vectorof (te Tᵢ …))
+        (vector->immutable-vector
+         (list->vector
+          (foldl-map (fe . args) acc (vector->list v))))
+        (define-fold fe te X type-to-replaceᵢ …)]]
+
+@chunk[<type-cases>
+       [(List X Y ...)
+        => (Pairof (tx Tᵢ …) (ty* Tᵢ …))
+        (let*-values ([(result-x acc-x) ((fx . args) (car v) acc)]
+                      [(result-y* acc-y*) ((fy* . args) (cdr v) acc-x)])
+          (values (cons result-x result-y*) acc-y*))
+        (define-fold fx tx X type-to-replaceᵢ …)
+        (define-fold fy* ty* (List Y ...) type-to-replaceᵢ …)]]
+
+@chunk[<type-cases>
+       [else-T
+        => else-T
+        (values v acc)]]
+
+where @racket[foldl-map] is defined as:
+
+@chunk[<foldl-map>
+       (: foldl-map (∀ (A B Acc) (→ (→ A Acc (Values B Acc))
+                                    Acc
+                                    (Listof A)
+                                    (Values (Listof B) Acc))))
+       (define (foldl-map f acc l)
+         (if (null? l)
+             (values l
+                     acc)
+             (let*-values ([(v a) (f (car l) acc)]
+                           [(ll aa) (foldl-map f a (cdr l))])
+               (values (cons v ll)
+                       aa))))]
+
+@chunk[<type-cases-macro>
+       (define-syntax type-cases
+         (syntax-parser
+           #:literals (=>)
+           [(_ (whole-type => the-type the-code the-defs (~literal …))
+               #:literals (lit …)
+               (Pat opts … => transform-type transform-code transform-defs …)
+               …)
+            #'(define/with-syntax (the-type the-code the-defs (… …))
+                (syntax-parse #'whole-type
+                  #:literals (lit …)
+                  [Pat opts …
+                   (template
+                        (transform-type transform-code transform-defs …))]
+                  …))]))]
 
 @chunk[<define-fold-result>
        the-defs …
@@ -159,14 +238,14 @@ way up, so that a simple identity function can be applied in these cases.
        (define-type (type-name Tᵢ …) the-type)
 
        (: function-name (∀ (Aᵢ … Bᵢ … Acc)
-                           (→ (?@ (→ Any Boolean : Aᵢ)
-                                  (→ Aᵢ Acc (Values Bᵢ Acc)))
+                           (→ {?@ (→ Any Boolean : Aᵢ)
+        (→ Aᵢ Acc (Values Bᵢ Acc))}
                               …
                               (→ (type-name Aᵢ …)
                                  Acc
                                  (Values (type-name Bᵢ …)
                                          Acc)))))
-       (define ((function-name (?@ predicateᵢ updateᵢ) …) v acc)
+       (define ((function-name . args) v acc)
          the-code)]
 
 @section{Putting it all together}
@@ -178,7 +257,13 @@ way up, so that a simple identity function can be applied in these cases.
                             racket/syntax
                             syntax/parse
                             syntax/parse/experimental/template
-                            type-expander/expander))
+                            type-expander/expander
+                            "free-identifier-tree-equal.rkt")
+                (for-meta 2 racket/base)
+                (for-meta 2 phc-toolkit/untyped)
+                (for-meta 2 syntax/parse))
 
        (provide define-fold)
+       (begin-for-syntax <type-cases-macro>)
+       <foldl-map>
        <define-fold>]
