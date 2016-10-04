@@ -130,9 +130,13 @@ way up, so that a simple identity function can be applied in these cases.
                whole-type:type
                type-to-replaceᵢ:type …)
             <define-fold-prepare>
+            ((λ (x)
+               (local-require racket/pretty)
+               #;(pretty-write (syntax->datum x))
+               x)
             (template
              (begin
-               <define-fold-result>))]))]
+               <define-fold-result>)))]))]
 
 @chunk[<define-fold-prepare>
        (define-temp-ids "_Tᵢ" (type-to-replaceᵢ …))
@@ -231,18 +235,20 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<type-cases>
        [(U X …)
-
+        (define-temp-ids "_fx" (X …))
+        (define-temp-ids "_tx" (X …))
+        
         #:to
-        (U (tx _Tᵢ …))
+        (U (_tx _Tᵢ …) …)
 
         #:using
         (dispatch-union ([type-to-replaceᵢ Aᵢ predicateᵢ]
                          …)
-                        [X v ((fx . _args) v acc)]
+                        [X v ((_fx . _args) v acc)]
                         …)
 
         #:with-defintitions
-        (define-fold fx tx X type-to-replaceᵢ …)
+        (define-fold _fx _tx X type-to-replaceᵢ …)
         …]]
 
 @chunk[<type-cases>
@@ -332,6 +338,7 @@ where @racket[foldl-map] is defined as:
        (require phc-toolkit
                 type-expander
                 phc-adt
+                "dispatch-union.rkt"
                 (for-syntax racket/base
                             phc-toolkit/untyped
                             racket/syntax
