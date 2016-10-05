@@ -7,7 +7,8 @@
                "type-expander"
                "hyper-literate"
                "scribble-enhanced"
-               "typed-racket-lib"))
+               "typed-racket-lib"
+               "srfi-lite-lib"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
