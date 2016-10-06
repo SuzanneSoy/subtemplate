@@ -2,8 +2,8 @@
 (define collection "phc-graph")
 (define deps '("base"
                "rackunit-lib"
-               "phc-toolkit"
-               "https://github.com/jsmaniac/phc-adt.git"
+               "https://github.com/jsmaniac/phc-toolkit.git#dev"
+               "https://github.com/jsmaniac/phc-adt.git#dev"
                "type-expander"
                "hyper-literate"
                "scribble-enhanced"
