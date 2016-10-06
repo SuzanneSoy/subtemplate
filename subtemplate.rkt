@@ -21,6 +21,7 @@
          quasisubtemplate
          (for-syntax find-subscript-binder)) ;; for testing only
 
+(begin-for-syntax (struct derived ()))
 (define-syntax-parameter maybe-syntax-pattern-variable-ids '())
 (define empty-pvar-values #f)
 (define-syntax-parameter pvar-values-id (make-rename-transformer
@@ -88,14 +89,17 @@
                 [subs (regexp-match #px"[ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ]+$" suffix)])
            (and subs (car subs)))))
 
+  (define/contract (extract-subscripts id)
+    (-> identifier? string?)
+    (car (regexp-match #px"[ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ]*$"
+                       (symbol->string (syntax-e id)))))
+  
   (define/contract (subscript-equal? bound binder)
     (-> identifier? identifier? (or/c #f string?))
-    (and (let* ([binder-string (symbol->string (syntax-e binder))]
-                [bound-string (symbol->string (syntax-e bound))]
-                [binder-s (regexp-match #px"[ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ]*$" binder)]
-                [bound-s  (regexp-match #px"[ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ]*$" bound)])
-           (equal? (car binder-s)
-                   (car bound-s)))))
+    (let* ([binder-subscripts (extract-subscripts binder)]
+           [bound-subscripts  (extract-subscripts bound)])
+      (and (string=? binder-subscripts bound-subscripts)
+           binder-subscripts)))
 
   (define/contract (derived? binder)
     (-> identifier? boolean?)
@@ -103,7 +107,9 @@
     #f)
 
   (define/contract (find-subscript-binder2a scopes bound)
-    (-> (listof (listof identifier?)) identifier? (listof identifier?))
+    (-> (listof (listof identifier?))
+        identifier?
+        (listof identifier?))
     (if (null? scopes)
         '()
         (let ()
@@ -111,29 +117,38 @@
           (define recur-found (find-subscript-binder2a (cdr scopes) bound))
           (define found-here
             (for*/list ([binder (in-list scope)]
+                        #:when (displayln (list (syntax-e bound) (syntax-e binder)
+                                                'pvar?= (syntax-pattern-variable?
+                                                         (syntax-local-value (replace-context bound binder)
+                                                                             (thunk #f)))
+                                                'derived= (not (derived? binder))
+                                                'subscripts= (subscript-equal? bound
+                                                                               binder)))
                         #:when (syntax-pattern-variable?
-                                (syntax-local-value binder
+                                (syntax-local-value (replace-context bound binder) ;; why do I need replace-context here???
                                                     (thunk #f)))
                         #:when (not (derived? binder))
                         [subscripts (in-value (subscript-equal? bound
                                                                 binder))]
                         #:when subscripts)
-              (list binder subscripts)))
+              binder))
           (if (null? found-here)
               recur-found
               (append found-here recur-found)))))
 
-  (define/contract (find-subscript-binder2 scopes bound)
-    (-> (listof (listof identifier?))
-        identifier?
-        (or/c #f (syntax/c (cons/c syntax? (listof identifier?)))))
+  (define/contract (find-subscript-binder2 bound)
+    (-> identifier?
+        (or/c #f (list/c (syntax/c (listof identifier?))
+                         exact-nonnegative-integer?
+                         syntax?)))
+    (define scopes (syntax-parameter-value #'maybe-syntax-pattern-variable-ids))
     (define/with-syntax (binder …) (find-subscript-binder2a scopes bound))
     (if (stx-null? #'(binder …))
         #f
         (let ()
           (define depths
-            (stx-map (∘ syntax-mapping-depth syntax-local-value) #'(binder …)))
-          (unless (apply = depths)
+            (stx-map (∘ syntax-mapping-depth syntax-local-value) (replace-context bound #'(binder …)))) ;; why do I need replace-context here???
+          (unless (or (< (length depths) 2) (apply = depths))
             (raise-syntax-error 'subtemplate
                                 (format "inconsistent depths: ~a"
                                         (syntax->list #'(binder …)))
@@ -142,7 +157,7 @@
           ;; ellipsis count
           (define/with-syntax check-ellipsis-count-ddd
             (nest-ellipses #'(binder …) (car depths)))
-          (values #'(check-ellipsis-count-ddd binder …)))))
+          (list #'(binder …) (car depths) #'check-ellipsis-count-ddd))))
   
   (define/contract (find-subscript-binder bound [fallback bound])
     (->* (identifier?) (any/c) (or/c identifier? any/c))
@@ -184,11 +199,11 @@
     (or (ormap identity result/scopes)
         fallback))
 
-  (define/contract (nest-ellipses id n)
-    (-> identifier? exact-nonnegative-integer? syntax?)
+  (define/contract (nest-ellipses stx n)
+    (-> syntax? exact-nonnegative-integer? syntax?)
     (if (= n 0)
-        id
-        #`(#,(nest-ellipses id (sub1 n))
+        stx
+        #`(#,(nest-ellipses stx (sub1 n))
            (… …)))))
 
 (define-syntax/case (derive bound binder stx-depth) ()
@@ -236,27 +251,80 @@
                      (free-identifier=? #'id #'unsyntax))
                 stx]
       [id (identifier? #'id)
-          (let ([binder (find-subscript-binder #'id #f)])
-            (when binder
-              (let ([depth (syntax-mapping-depth
-                            (syntax-local-value binder))])
-                (set! acc `((,#'id ,binder ,depth) . ,acc))))
-            #'id)]
+          (let ([binders (find-subscript-binder2 #'id)])
+            (when binders
+              (displayln (syntax->datum (datum->syntax #f (cons #'id binders))))
+              (set! acc (cons (cons #'id binders)
+                              acc)))
+            #'id)
+          #;(let ([binder (find-subscript-binder #'id #f)])
+              (when binder
+                (let ([depth (syntax-mapping-depth
+                              (syntax-local-value binder))])
+                  (set! acc `((,#'id ,binder ,depth) . ,acc))))
+              #'id)]
       [other (rec #'other)]))
   (define result
     (quasisyntax/top-loc #'self
       (#,tmpl-form
        . #,(fold-syntax fold-process
                         #'tmpl))))
-  ;; Make sure that we remove duplicates, otherwise we'll get errors if we use
-  ;; the same derived id twice.
-  (define/with-syntax ([bound binder depth] …)
+  ;; Make sure that we remove duplicates, otherwise we'll get errors if we
+  ;; define the same derived id twice.
+  (define/with-syntax ([bound (binder0 . binders) depth check-ellipsis-count] …)
     (remove-duplicates acc free-identifier=? #:key car))
+  #;(define/with-syntax ([bound binder depth] …)
+      (remove-duplicates acc free-identifier=? #:key car))
+
+  (displayln (syntax->datum #'((derive2 bound binder0 (binder0 . binders) depth)
+                               …)))
   
   #`(let ()
-      (derive bound binder depth)
+      #;(derive bound binder depth)
+      (derive2 bound binder0 (binder0 . binders) depth)
       …
-      #,result))
+      (let ()
+        #'#,(replace-context ;; TODO: this is most certainly wrong
+             (stx-car #'(bound …))
+             #'(check-ellipsis-count …))
+        #,result)))
 
 (define-syntax subtemplate (sub*template #'template))
 (define-syntax quasisubtemplate (sub*template #'quasitemplate))
+
+
+
+
+
+(define-syntax/case (derive2 bound binder0 binders stx-depth) ()
+  (define/with-syntax bound-def #'bound #;(replace-context #'binder0 #'bound))
+  (define depth (syntax-e #'stx-depth))
+  (define/with-syntax bound-ddd (nest-ellipses #'bound-def depth))
+  (define/with-syntax tmp-id (format-id #'here "~a/~a" #'binder0 #'bound-def))
+  (define/with-syntax tmp-str (datum->syntax #'tmp-id (symbol->string
+                                                       (syntax-e #'tmp-id))))
+  (define/with-syntax tmp-ddd (nest-ellipses #'tmp-id depth))
+  (define/with-syntax binder-ddd (nest-ellipses (replace-context #'bound #'binder0) ;; why oh why do I need replace-context here???
+                                                depth))
+  ;; HERE: cache the define-temp-ids in the free-id-table, and make sure
+  ;; that we retrieve the cached ones, so that two subtemplate within the same
+  ;; syntax-case or syntax-parse clause use the same derived ids.
+  ;; TODO: mark specially those bindings bound by (derive …) so that they are
+  ;; not seen as original bindings in nested subtemplates (e.g. with an
+  ;; "unsyntax"), otherwise that rule may not hold anymore, e.g.
+  ;; (syntax-parse #'(a b c)
+  ;;   [(xᵢ …)
+  ;;    (quasisubtemplate (yᵢ …
+  ;;                       #,(quasisubtemplate zᵢ …) ;; must be from xᵢ, not yᵢ
+  ;;                       zᵢ …))])
+  ;; the test above is not exactly right (zᵢ will still have the correct
+  ;; binding), but it gives the general idea.
+
+  ;; TODO: shouldn't be called in the first place? ;; TODO: remove?
+  (if (syntax-pattern-variable? (syntax-local-value #'bound (thunk #f)))
+      #'(begin)
+      #`(begin (define-temp-ids tmp-str binder-ddd)
+               (define cached (free-id-table-ref! pvar-values-id
+                                                  (quote-syntax bound-def #:local)
+                                                  #'tmp-ddd))
+               (define/with-syntax bound-ddd cached))))

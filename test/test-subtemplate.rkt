@@ -2,6 +2,22 @@
 (require "../subtemplate.rkt"
          phc-toolkit/untyped
          rackunit)
+
+(map syntax->datum
+     (syntax-parse #'(a b c d)
+       [(_ xⱼ zᵢ …)
+        (list (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))
+              (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …)))]))
+
+#;(map syntax->datum
+       (syntax-parse #'()
+         [()
+          (syntax-parse #'(a b c)
+            [(xⱼ zᵢ …)
+             (list (let () (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …)))
+                   (syntax-parse #'(e)
+                     [(e) (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))]))])]))
+
 #|
 (define-syntax (tst stx)
   (syntax-case stx ()
@@ -273,14 +289,14 @@
    (check (∘ not free-identifier=?) #'c3 #'c4)])
 |#
 
-(map syntax->datum
-     (syntax-parse #'(a b c)
-       [(xᵢ …)
-        (list (syntax-parse #'(d)
-                [(pᵢ …) #`(#,(quasisubtemplate (xᵢ … pᵢ … zᵢ …))
-                           #,(quasisubtemplate (xᵢ … pᵢ … zᵢ …)))])
-              (syntax-parse #'(e)
-                [(pᵢ …) (quasisubtemplate (xᵢ … pᵢ … zᵢ …))]))]))
+#;(map syntax->datum
+       (syntax-parse #'(a b c)
+         [(xᵢ …)
+          (list (syntax-parse #'(d)
+                  [(pᵢ …) #`(#,(quasisubtemplate (xᵢ … pᵢ … zᵢ …))
+                             #,(quasisubtemplate (xᵢ … pᵢ … zᵢ …)))])
+                (syntax-parse #'(e)
+                  [(pᵢ …) (quasisubtemplate (xᵢ … pᵢ … zᵢ …))]))]))
 
 #;(syntax->datum
    (syntax-parse #'(a b c)
