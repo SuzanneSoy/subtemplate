@@ -2,7 +2,7 @@
 (require "../subtemplate.rkt"
          phc-toolkit/untyped
          rackunit)
-
+#|
 (define-syntax (tst stx)
   (syntax-case stx ()
     [(_ tt)
@@ -190,19 +190,118 @@
 ;; the test above is not exactly right (zᵢ will still have the correct
 ;; binding), but it gives the general idea.
 
-(syntax->datum
- (syntax-parse #'(a b c)
-   [(xᵢ …)
-    (define flob (syntax-parse #'d [d (quasisubtemplate (zᵢ …))]))
-    (quasisubtemplate (yᵢ …
-                       ;; must be from xᵢ, not yᵢ
-                       #,flob
-                       zᵢ …))]))
+(syntax-parse (syntax-parse #'(a b c)
+                [(xᵢ …)
+                 (define flob (syntax-parse #'d [d (quasisubtemplate (zᵢ …))]))
+                 (quasisubtemplate (yᵢ …
+                                    ;; must be from xᵢ, not yᵢ
+                                    #,flob
+                                    zᵢ …))])
+  [(a1 b1 c1 (a2 b2 c2) a3 b3 c3)
+   (check free-identifier=? #'a2 #'a3)
+   (check free-identifier=? #'b2 #'b3)
+   (check free-identifier=? #'c2 #'c3)
+   (check (∘ not free-identifier=?) #'a1 #'a2)
+   (check (∘ not free-identifier=?) #'b1 #'b2)
+   (check (∘ not free-identifier=?) #'c1 #'c2)])
 
-(syntax->datum
- (syntax-parse #'(a b c)
-   [(xᵢ …)
-    (quasisubtemplate (yᵢ …
-                       ;; must be from xᵢ, not yᵢ
-                       #,(syntax-parse #'d [d (quasisubtemplate (zᵢ …))])
-                       zᵢ …))]))
+(syntax-parse (syntax-parse #'(a b c)
+                [(xᵢ …)
+                 (quasisubtemplate (yᵢ …
+                                    ;; must be from xᵢ, not yᵢ
+                                    #,(syntax-parse #'d
+                                        [d (quasisubtemplate (zᵢ …))])
+                                    zᵢ …))])
+  [(a1 b1 c1 (a2 b2 c2) a3 b3 c3)
+   (check free-identifier=? #'a2 #'a3)
+   (check free-identifier=? #'b2 #'b3)
+   (check free-identifier=? #'c2 #'c3)
+   (check (∘ not free-identifier=?) #'a1 #'a2)
+   (check (∘ not free-identifier=?) #'b1 #'b2)
+   (check (∘ not free-identifier=?) #'c1 #'c2)])
+
+(syntax-parse (syntax-parse #'(a b c)
+                [(xᵢ …)
+                 (quasisubtemplate (yᵢ …
+                                    ;; must be from xᵢ, not yᵢ
+                                    #,(syntax-parse #'d
+                                        [d (quasisubtemplate (zᵢ …))])
+                                    #,(syntax-parse #'d
+                                        [d (quasisubtemplate (zᵢ …))])
+                                    zᵢ …))])
+  [(a1 b1 c1 (a2 b2 c2) (a3 b3 c3) a4 b4 c4)
+   (check free-identifier=? #'a2 #'a3)
+   (check free-identifier=? #'b2 #'b3)
+   (check free-identifier=? #'c2 #'c3)
+   
+   (check free-identifier=? #'a3 #'a4)
+   (check free-identifier=? #'b3 #'b4)
+   (check free-identifier=? #'c3 #'c4)
+   
+   (check free-identifier=? #'a2 #'a4)
+   (check free-identifier=? #'b2 #'b4)
+   (check free-identifier=? #'c2 #'c4)
+   
+   (check (∘ not free-identifier=?) #'a1 #'a2)
+   (check (∘ not free-identifier=?) #'b1 #'b2)
+   (check (∘ not free-identifier=?) #'c1 #'c2)])
+
+(syntax-parse (syntax-parse #'(a b c)
+                [(xᵢ …)
+                 (quasisubtemplate (yᵢ …
+                                    ;; must be from xᵢ, not yᵢ
+                                    #,(syntax-parse #'d
+                                        [d (quasisubtemplate (kᵢ …))])
+                                    #,(syntax-parse #'d
+                                        [d (quasisubtemplate (kᵢ …))])
+                                    zᵢ …))])
+  [(a1 b1 c1 (a2 b2 c2) (a3 b3 c3) a4 b4 c4)
+   (check free-identifier=? #'a2 #'a3)
+   (check free-identifier=? #'b2 #'b3)
+   (check free-identifier=? #'c2 #'c3)
+   
+   (check (∘ not free-identifier=?) #'a1 #'a2)
+   (check (∘ not free-identifier=?) #'b1 #'b2)
+   (check (∘ not free-identifier=?) #'c1 #'c2)
+
+   (check (∘ not free-identifier=?) #'a2 #'a4)
+   (check (∘ not free-identifier=?) #'b2 #'b4)
+   (check (∘ not free-identifier=?) #'c2 #'c4)
+
+   (check (∘ not free-identifier=?) #'a3 #'a4)
+   (check (∘ not free-identifier=?) #'b3 #'b4)
+   (check (∘ not free-identifier=?) #'c3 #'c4)])
+|#
+
+(map syntax->datum
+     (syntax-parse #'(a b c)
+       [(xᵢ …)
+        (list (syntax-parse #'(d)
+                [(pᵢ …) #`(#,(quasisubtemplate (xᵢ … pᵢ … zᵢ …))
+                           #,(quasisubtemplate (xᵢ … pᵢ … zᵢ …)))])
+              (syntax-parse #'(e)
+                [(pᵢ …) (quasisubtemplate (xᵢ … pᵢ … zᵢ …))]))]))
+
+#;(syntax->datum
+   (syntax-parse #'(a b c)
+     [(xᵢ …)
+      (quasisubtemplate (yᵢ …
+                         ;; must be from xᵢ, not yᵢ
+                         #,(syntax-parse #'(d)
+                             [(pᵢ …) (quasisubtemplate (pᵢ … zᵢ …))])
+                         ;; GIVES WRONG ID (re-uses the one above, shouldn't):
+                         #,(syntax-parse #'(e)
+                             [(pᵢ …) (quasisubtemplate (pᵢ … zᵢ …))])
+                         wᵢ …))]))
+
+#|
+(syntax-parse #'(a b c)
+                [(xᵢ …)
+                 (quasisubtemplate (yᵢ …
+                                    ;; must be from xᵢ, not yᵢ
+                                    #,(syntax-parse #'d
+                                        [zᵢ (quasisubtemplate (zᵢ …))])
+                                    #,(syntax-parse #'e
+                                        [zᵢ (quasisubtemplate (zᵢ …))])
+                                    zᵢ …))])
+|#
