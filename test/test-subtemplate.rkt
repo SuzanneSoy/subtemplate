@@ -9,14 +9,15 @@
         (list (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))
               (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …)))]))
 
-#;(map syntax->datum
-       (syntax-parse #'()
-         [()
-          (syntax-parse #'(a b c)
-            [(xⱼ zᵢ …)
-             (list (let () (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …)))
-                   (syntax-parse #'(e)
-                     [(e) (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))]))])]))
+(map syntax->datum
+     (syntax-parse #'()
+       [()
+        (syntax-parse #'(a b)
+          [(zᵢ …)
+           (list (syntax-parse #'(e)
+                   [(xⱼ) (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))])
+                 (syntax-parse #'(e)
+                   [(xⱼ) (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))]))])]))
 
 #|
 (define-syntax (tst stx)
