@@ -250,9 +250,7 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<type-cases>
        [(U _Xⱼ …)
-        (define-temp-ids "_fx" (_Xⱼ …))
-        (define-temp-ids "_tx" (_Xⱼ …))
-        
+
         #:to
         (U (_txⱼ _Tᵢ …) …)
 
