@@ -28,14 +28,14 @@
  : (Values (U (tagged tg [a Symbol] [b Boolean])) Integer)
  (tagged tg [a 'abc] [b #f]) 1)
 
-#;(check-equal?-values:
+(check-equal?-values:
  ((f₃ string? string->symbol+acc) (tagged tg [a "abc"] [b #f]) 0)
  : (Values (U (tagged tg [a Symbol] [b Boolean])
               (tagged tg [a Boolean] [c Symbol]))
            Integer)
  (tagged tg [a 'abc] [b #f]) 1)
 
-#;(check-equal?-values:
+(check-equal?-values:
  ((f₃ string? string->symbol+acc) (tagged tg [a #t] [c "def"]) 0)
  : (Values (U (tagged tg [a Symbol] [b Boolean])
               (tagged tg [a Boolean] [c Symbol]))

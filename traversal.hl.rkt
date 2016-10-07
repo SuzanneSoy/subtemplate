@@ -255,10 +255,9 @@ way up, so that a simple identity function can be applied in these cases.
         (U (_txⱼ _Tᵢ …) …)
 
         #:using
-        (dispatch-union ([type-to-replaceᵢ Aᵢ predicateᵢ]
-                         …)
-                        [_Xⱼ v ((_fxⱼ . _args) v acc)]
-                        …)
+        (dispatch-union v
+                        ([type-to-replaceᵢ Aᵢ predicateᵢ] …)
+                        [_Xⱼ ((_fxⱼ . _args) v acc)] …)
 
         #:with-defintitions
         (define-fold _fxⱼ _txⱼ _Xⱼ type-to-replaceᵢ …)

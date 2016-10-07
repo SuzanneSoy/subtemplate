@@ -15,19 +15,19 @@
 
 (provide dispatch-union)
 
-(define-syntax/parse (dispatch-union ([type-to-replaceᵢ Aᵢ predicateᵢ] …)
-                                     [X v result] …)
+(define-syntax/parse (dispatch-union v
+                                     ([type-to-replaceᵢ Aᵢ predicateᵢ] …)
+                                     [Xⱼ result] …)
   ((λ (x) (local-require racket/pretty) #;(pretty-write (syntax->datum x)) x)
    #`(cond
        . #,(stx-map
-            (λ (X v result)
+            (λ (X result)
               (syntax-parse X
                 #:literals (tagged)
-                [(tagged name [fieldᵢ (~optional :colon) typeᵢ] …)
-                 #`[((tagged? name fieldᵢ …) #,v) #,result]]
+                [(tagged name [fieldₖ (~optional :colon) typeₖ] …)
+                 #`[((tagged? name fieldₖ …) v) #,result]]
                 [other (raise-syntax-error 'graph
                                            "Unhandled union type"
                                            #'other)]))
-            #'(X …)
-            #'(v …)
+            #'(Xⱼ …)
             #'(result …)))))
