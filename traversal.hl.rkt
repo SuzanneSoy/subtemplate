@@ -134,18 +134,35 @@ way up, so that a simple identity function can be applied in these cases.
                (local-require racket/pretty)
                #;(pretty-write (syntax->datum x))
                x)
-            (template
+            (subtemplate
              (begin
                <define-fold-result>)))]))]
 
-@chunk[<define-fold-prepare>
-       (define-temp-ids "_Tᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "_Aᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "_Bᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "predicateᵢ" (type-to-replaceᵢ …))
-       (define-temp-ids "updateᵢ" (type-to-replaceᵢ …))
 
-       (define/with-syntax _args (template ({?@ predicateᵢ updateᵢ} …)))]
+@chunk[<define-fold-result>
+       the-defs …
+
+       (define-type (_type-name _Tᵢ …) _the-type)
+
+       (: _function-name (∀ (_Aᵢ … _Bᵢ … Acc)
+                            (→ (?@ (→ Any Boolean : _Aᵢ)
+                                   (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                               …
+                               (→ (_type-name _Aᵢ …)
+                                  Acc
+                                  (Values (_type-name _Bᵢ …)
+                                          Acc)))))
+       (define ((_function-name . _args) v acc)
+         _the-code)]
+
+@chunk[<define-fold-prepare>
+       ;(define-temp-ids "_Tᵢ" (type-to-replaceᵢ …))
+       ;(define-temp-ids "_Aᵢ" (type-to-replaceᵢ …))
+       ;(define-temp-ids "_Bᵢ" (type-to-replaceᵢ …))
+       ;(define-temp-ids "predicateᵢ" (type-to-replaceᵢ …))
+       ;(define-temp-ids "updateᵢ" (type-to-replaceᵢ …))
+
+       (define/with-syntax _args (subtemplate ({?@ predicateᵢ updateᵢ} …)))]
 
 @chunk[<define-fold-prepare>
        (type-cases
@@ -302,7 +319,7 @@ where @racket[foldl-map] is defined as:
                            #:using the-code
                            #:with-defintitions the-defs (~literal …))
                #:literals (lit …)
-               (Pat opts …
+               (pat opts …
                     #:to transform-type
                     #:using transform-code
                     (~optional (~seq #:with-defintitions transform-defs …)
@@ -311,38 +328,25 @@ where @racket[foldl-map] is defined as:
             #'(define/with-syntax (the-type the-code the-defs (… …))
                 (syntax-parse #'whole-type
                   #:literals (lit …)
-                  [Pat opts …
-                   (template
+                  [pat opts …
+                   (subtemplate
                     (transform-type transform-code transform-defs …))]
                   …))]))]
 
-@chunk[<define-fold-result>
-       the-defs …
-
-       (define-type (_type-name _Tᵢ …) _the-type)
-
-       (: _function-name (∀ (_Aᵢ … _Bᵢ … Acc)
-                            (→ (?@ (→ Any Boolean : _Aᵢ)
-                                   (→ _Aᵢ Acc (Values _Bᵢ Acc)))
-                               …
-                               (→ (_type-name _Aᵢ …)
-                                  Acc
-                                  (Values (_type-name _Bᵢ …)
-                                          Acc)))))
-       (define ((_function-name . _args) v acc)
-         _the-code)]
 
 @section{Putting it all together}
 
 @chunk[<*>
-       (require phc-toolkit
+       (require racket/require
+                phc-toolkit
                 type-expander
                 phc-adt
                 "dispatch-union.rkt"
-                (for-syntax racket/base
+                (for-syntax "subtemplate.rkt"
+                            (subtract-in racket/base "subtemplate.rkt")
                             phc-toolkit/untyped
                             racket/syntax
-                            syntax/parse
+                            (subtract-in syntax/parse "subtemplate.rkt")
                             syntax/parse/experimental/template
                             type-expander/expander
                             "free-identifier-tree-equal.rkt")

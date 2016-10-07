@@ -1,11 +1,13 @@
 #lang racket
-(require phc-toolkit/untyped
+(require racket/require
+         phc-toolkit/untyped
          racket/stxparam
          syntax/parse
          syntax/parse/experimental/template
          syntax/id-table
          racket/syntax
-         (for-syntax syntax/parse
+         (for-syntax "patch-arrows.rkt"
+                     syntax/parse
                      racket/private/sc
                      racket/syntax
                      racket/list
@@ -13,10 +15,12 @@
                      phc-toolkit/untyped
                      syntax/strip-context
                      srfi/13
+                     (subtract-in racket/string srfi/13)
                      syntax/contract
                      racket/contract))
 
 (provide (rename-out [new-syntax-parse syntax-parse]
+                     [new-syntax-parser syntax-parser]
                      [new-syntax-case syntax-case])
          subtemplate
          quasisubtemplate)
@@ -26,6 +30,14 @@
 (define empty-pvar-values '())
 (define-syntax-parameter pvar-values-id (make-rename-transformer
                                          #'empty-pvar-values))
+
+(begin-for-syntax
+  (define/contract (split-colon sym)
+    (-> symbol? (cons/c symbol? (listof symbol?)))
+    (cons sym
+          (map string->symbol
+               (string-split (symbol->string sym)
+                             ":")))))
 
 (define-for-syntax (new-scope rest lctx)
   ;(wrap-expr/c
@@ -37,38 +49,48 @@
                 '#,(~> (syntax->datum rest)
                        flatten
                        (filter symbol? _)
+                       (append-map split-colon _)
                        (remove-duplicates)))
           (syntax-parameter-value
            #'maybe-syntax-pattern-variable-ids)));)
 
-(define-syntax/parse (new-syntax-parse . rest)
-  (quasisyntax/top-loc (stx-car stx)
-    ;; HERE insert a hash table, to cache the uses of derived pvars.
-    ;; Lifting the define-temp-ids is not likely to work, as they
-    ;; need to define syntax pattern variables so that other macros
-    ;; can recognize them. Instead, we only lift the values, but still
-    ;; do the bindings around the subtemplate.
-    (let ([the-pvar-values (cons (make-hash) pvar-values-id)])
-      (syntax-parameterize ([maybe-syntax-pattern-variable-ids
-                             #,(new-scope #'rest (stx-car stx))]
-                            [pvar-values-id (make-rename-transformer
-                                             #'the-pvar-values)])
-        (syntax-parse . rest)))))
+(begin-for-syntax
+  (define/contract (wrap-with-parameterize lctx new-whole-form rest)
+    (-> identifier? syntax? syntax? syntax?)
+    (patch-arrows
+     (quasisyntax/top-loc lctx
+       ;; HERE insert a hash table, to cache the uses of derived pvars.
+       ;; Lifting the define-temp-ids is not likely to work, as they
+       ;; need to define syntax pattern variables so that other macros
+       ;; can recognize them. Instead, we only lift the values, but still
+       ;; do the bindings around the subtemplate.
+       (let ([the-pvar-values (cons (make-hash) pvar-values-id)])
+         (syntax-parameterize ([maybe-syntax-pattern-variable-ids
+                                #,(new-scope rest lctx)]
+                               [pvar-values-id (make-rename-transformer
+                                                #'the-pvar-values)])
+           #,new-whole-form))))))
 
-(define-syntax/case (new-syntax-case . rest) ()
-  (error "new-syntax-case not implemented yet")
-  #;(quasisyntax/top-loc (stx-car stx)
-      (let ([the-pvar-values (or pvar-values-id (make-free-id-table))])
-        (syntax-parameterize ([maybe-syntax-pattern-variable-ids
-                               (cons '#,(remove-duplicates
-                                         (filter symbol?
-                                                 (flatten
-                                                  (syntax->datum #'rest))))
-                                     (syntax-parameter-value
-                                      #'maybe-syntax-pattern-variable-ids))]
-                              [pvar-values-id (make-rename-transformer
-                                               #'the-pvar-values)])
-          (syntax-case . rest)))))
+(begin-for-syntax
+  (define/contract (simple-wrap-with-parameterize new-form-id)
+    (-> identifier? (-> syntax? syntax?))
+    (λ/syntax-case (self . rest) ()
+      (wrap-with-parameterize #'self #`(#,new-form-id . rest) #'rest))))
+
+(define-syntax new-syntax-parse
+  (simple-wrap-with-parameterize #'syntax-parse))
+
+(define-syntax new-syntax-case
+  (simple-wrap-with-parameterize #'syntax-case))
+
+(define-syntax (new-syntax-parser stx)
+  (syntax-case stx ()
+    [(self . rest)
+     (quasisyntax/top-loc #'self
+       (λ (stx2)
+         #,(wrap-with-parameterize #'self
+                                   #'((syntax-parser . rest) stx2)
+                                   #'rest)))]))
 
 (begin-for-syntax
   (define/contract (string-suffix a b)
@@ -118,18 +140,7 @@
                                                        (add1 scope-depth)))
           (define found-here
             (for*/list ([binder-sym (in-list syms)]
-                        [binder (in-value (datum->syntax lctx binder-sym))]
-                        #;#:when #;(displayln (list bound binder
-                                                    'pvar?= (syntax-pattern-variable?
-                                                             (syntax-local-value binder (thunk #f)))
-                                                    'derived?= (derived?
-                                                                (syntax-local-value
-                                                                 (format-id binder
-                                                                            "  is-derived-~a  "
-                                                                            binder)
-                                                                 (thunk #f)))
-                                                    (subscript-equal? bound
-                                                                      binder)))
+                        [binder (in-value (datum->syntax lctx binder-sym #f))]
                         #:when (syntax-pattern-variable?
                                 (syntax-local-value binder (thunk #f)))
                         #:when (not (derived?
@@ -141,9 +152,7 @@
                         [subscripts (in-value (subscript-equal? bound
                                                                 binder))]
                         #:when subscripts)
-              ;(displayln (list binder scope-depth))
               (list binder scope-depth)))
-          ;(displayln (list* 'found-here=  bound '→ found-here))
           (if (null? found-here)
               recur-found
               (append found-here recur-found)))))
@@ -151,7 +160,8 @@
   (define/contract (find-subscript-binder2 bound)
     (-> identifier?
         (or/c #f (list/c identifier?                     ;; bound
-                         (syntax/c (listof identifier?)) ;; bindings
+                         (syntax/c (listof identifier?)) ;; binders
+                         (syntax/c (listof identifier?)) ;; max-binders
                          exact-nonnegative-integer?      ;; ellipsis-depth
                          exact-nonnegative-integer?      ;; scope-depth
                          syntax?)))                      ;; check-ellipsis-count
@@ -161,7 +171,6 @@
                                scopes
                                bound
                                0))
-    ;(displayln (syntax->datum #`(2 bound= #,bound 2a-result= [binder scope-depth] …)))
     (if (stx-null? #'(binder …))
         #f
         (let ()
@@ -176,10 +185,18 @@
           ;; ellipsis count
           (define/with-syntax check-ellipsis-count-ddd
             (nest-ellipses #'(binder …) (car depths)))
+          (define max-scope-depth (apply max (syntax->datum #'(scope-depth …))))
+          (define max-binders
+            (sort (map car
+                       (filter (λ (bs) (= (syntax-e (cdr bs)) max-scope-depth))
+                               (stx-map syntax-e #'([binder . scope-depth] …))))
+                  symbol<?
+                  #:key syntax-e))
           (list bound
                 #'(binder …)
+                #`#,max-binders
                 (car depths)
-                (apply max (syntax->datum #'(scope-depth …)))
+                max-scope-depth
                 #'check-ellipsis-count-ddd))))
 
   (define/contract (nest-ellipses stx n)
@@ -197,10 +214,9 @@
                      (free-identifier=? #'id #'unsyntax))
                 stx]
       [id (identifier? #'id)
-          (let ([binders (find-subscript-binder2 #'id)])
-            (when binders
-              ;(displayln (syntax->datum (datum->syntax #f binders)))
-              (set! acc (cons binders acc)))
+          (let ([binders+info (find-subscript-binder2 #'id)])
+            (when binders+info
+              (set! acc (cons binders+info acc)))
             #'id)]
       [other (rec #'other)]))
   (define result
@@ -210,17 +226,15 @@
                         #'tmpl))))
   ;; Make sure that we remove duplicates, otherwise we'll get errors if we
   ;; define the same derived id twice.
-  (define/with-syntax ([bound (binder0 . binders)
+  (define/with-syntax ([bound binders
+                              max-binders
                               depth
                               scope-depth
                               check-ellipsis-count] …)
     (remove-duplicates acc #:key car))
 
-  #;(displayln (syntax->datum #'((derive2 bound binder0 (binder0 . binders) depth scope-depth)
-                                 …)))
-  
   #`(let ()
-      (derive2 bound binder0 (binder0 . binders) depth scope-depth)
+      (derive bound binders max-binders depth scope-depth)
       …
       (let ()
         ;; no-op, just to raise an error when they are incompatible
@@ -233,42 +247,67 @@
 
 
 
+(define-syntax/case (derive bound binders max-binders stx-depth stx-scope-depth)
+  ()
+  ;; TODO: shouldn't it be called in the first place?
+  (if (syntax-pattern-variable? (syntax-local-value #'bound (thunk #f)))
+      #'(begin)
+      #'(derive2 bound binders max-binders stx-depth stx-scope-depth)))
 
-
-(define-syntax/case (derive2 bound binder0 binders stx-depth stx-scope-depth) ()
-  (define/with-syntax bound-def #'bound #;(replace-context #'binder0 #'bound))
+(define-syntax/case (derive2 bound
+                             binders
+                             (max-binder0 . max-binders)
+                             stx-depth
+                             stx-scope-depth) ()
   (define depth (syntax-e #'stx-depth))
-  (define/with-syntax bound-ddd (nest-ellipses #'bound-def depth))
-  (define/with-syntax tmp-id (format-id #'here "~a/~a" #'binder0 #'bound-def))
+  (define/with-syntax bound-ddd (nest-ellipses #'bound depth))
+  (define/with-syntax tmp-id (format-id #'here "~a/~a" #'max-binder0 #'bound))
   (define/with-syntax tmp-str (datum->syntax #'tmp-id (symbol->string
                                                        (syntax-e #'tmp-id))))
   (define/with-syntax tmp-ddd (nest-ellipses #'tmp-id depth))
-  (define/with-syntax binder-ddd (nest-ellipses (replace-context #'bound #'binder0) ;; why oh why do I need replace-context here???
-                                                depth))
-  ;; HERE: cache the define-temp-ids in the free-id-table, and make sure
-  ;; that we retrieve the cached ones, so that two subtemplate within the same
-  ;; syntax-case or syntax-parse clause use the same derived ids.
-  ;; TODO: mark specially those bindings bound by (derive …) so that they are
-  ;; not seen as original bindings in nested subtemplates (e.g. with an
-  ;; "unsyntax"), otherwise that rule may not hold anymore, e.g.
-  ;; (syntax-parse #'(a b c)
-  ;;   [(xᵢ …)
-  ;;    (quasisubtemplate (yᵢ …
-  ;;                       #,(quasisubtemplate zᵢ …) ;; must be from xᵢ, not yᵢ
-  ;;                       zᵢ …))])
-  ;; the test above is not exactly right (zᵢ will still have the correct
-  ;; binding), but it gives the general idea.
+  (define/with-syntax binder-ddd (nest-ellipses #'max-binder0 depth))
 
-  ;; TODO: shouldn't be called in the first place? ;; TODO: remove?
-  (if (syntax-pattern-variable? (syntax-local-value #'bound (thunk #f)))
-      #'(begin)
-      #`(begin (define-temp-ids tmp-str binder-ddd)
-               (define cached (hash-ref! (list-ref pvar-values-id
-                                                   stx-scope-depth)
-                                         'bound-def
-                                         #'tmp-ddd))
-               (define/with-syntax bound-ddd cached)
-               (define-syntax #,(format-id #'bound
-                                           "  is-derived-~a  "
-                                           #'bound)
-                 (derived)))))
+  ;; Draw arrows in DrRacket.
+  (with-arrows
+   (define subscripts (subscript-equal? #'bound #'max-binder0))
+   (define bound-id-str (identifier->string #'bound))
+   (for ([max-binder (in-list (syntax->list #'(max-binder0 . max-binders)))])
+     (define binder-id-str (identifier->string max-binder))
+     (record-sub-range-binders! (vector #'bound
+                                        (- (string-length bound-id-str)
+                                           (string-length subscripts))
+                                        (string-length subscripts)
+                                        max-binder
+                                        (- (string-length binder-id-str)
+                                           (string-length subscripts))
+                                        (string-length subscripts))))
+   #;(define binder0-id-str (identifier->string #'max-binder0))
+   #;(record-sub-range-binders! (vector #'bound
+                                        (- (string-length bound-id-str)
+                                           (string-length subscripts))
+                                        (string-length subscripts)
+                                        #'max-binder0
+                                        (- (string-length binder0-id-str)
+                                           (string-length subscripts))
+                                        (string-length subscripts)))
+   ;; HERE: cache the define-temp-ids in the free-id-table, and make sure
+   ;; that we retrieve the cached ones, so that two subtemplate within the same
+   ;; syntax-case or syntax-parse clause use the same derived ids.
+   ;; TODO: mark specially those bindings bound by (derive …) so that they are
+   ;; not seen as original bindings in nested subtemplates (e.g. with an
+   ;; "unsyntax"), otherwise that rule may not hold anymore, e.g.
+   ;; (syntax-parse #'(a b c)
+   ;;   [(xᵢ …)
+   ;;    (quasisubtemplate (yᵢ …
+   ;;                       #,(quasisubtemplate zᵢ …) ;; must be from xᵢ, not yᵢ
+   ;;                       zᵢ …))])
+   ;; the test above is not exactly right (zᵢ will still have the correct
+   ;; binding), but it gives the general idea.
+   #`(begin (define-temp-ids tmp-str binder-ddd)
+            (define cached (hash-ref! (list-ref pvar-values-id
+                                                stx-scope-depth)
+                                      'bound
+                                      #'tmp-ddd))
+            (define/with-syntax bound-ddd cached)
+            (define-syntax #,(format-id #'bound "  is-derived-~a  " #'bound)
+              (derived)))))
