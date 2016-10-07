@@ -219,11 +219,14 @@
               (set! acc (cons binders+info acc)))
             #'id)]
       [other (rec #'other)]))
+  ;; process the syntax, extract the derived bindings into acc
+  (fold-syntax fold-process #'tmpl)
+  ;; define the result, which looks like (template . tmpl) or
+  ;; like (quasitemplate . tmpl)
   (define result
     (quasisyntax/top-loc #'self
       (#,tmpl-form
-       . #,(fold-syntax fold-process
-                        #'tmpl))))
+       . tmpl)))
   ;; Make sure that we remove duplicates, otherwise we'll get errors if we
   ;; define the same derived id twice.
   (define/with-syntax ([bound binders

@@ -123,6 +123,9 @@ not expressed syntactically using the @racket[Foo] identifier.
 way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<define-fold>
+       (begin-for-syntax
+         (define-syntax-rule (barr body)
+           body))
        (define-syntax define-fold
          (syntax-parser
            [(_ _function-name:id
@@ -134,10 +137,9 @@ way up, so that a simple identity function can be applied in these cases.
                (local-require racket/pretty)
                #;(pretty-write (syntax->datum x))
                x)
-            (subtemplate
-             (begin
-               <define-fold-result>)))]))]
-
+             (subtemplate
+              (begin
+                <define-fold-result>)))]))]
 
 @chunk[<define-fold-result>
        the-defs …
@@ -156,16 +158,11 @@ way up, so that a simple identity function can be applied in these cases.
          _the-code)]
 
 @chunk[<define-fold-prepare>
-       ;(define-temp-ids "_Tᵢ" (type-to-replaceᵢ …))
-       ;(define-temp-ids "_Aᵢ" (type-to-replaceᵢ …))
-       ;(define-temp-ids "_Bᵢ" (type-to-replaceᵢ …))
-       ;(define-temp-ids "predicateᵢ" (type-to-replaceᵢ …))
-       ;(define-temp-ids "updateᵢ" (type-to-replaceᵢ …))
-
        (define/with-syntax _args (subtemplate ({?@ predicateᵢ updateᵢ} …)))]
 
 @chunk[<define-fold-prepare>
        (type-cases
+        syntax-parse
         (whole-type #:to _the-type
                     #:using _the-code
                     #:with-defintitions the-defs …)
@@ -175,7 +172,8 @@ way up, so that a simple identity function can be applied in these cases.
 @chunk[<type-cases>
        [t
         #:with info (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
-                           (syntax->list #'([type-to-replaceᵢ updateᵢ _Tᵢ] …)))
+                           (syntax->list
+                            (subtemplate ([type-to-replaceᵢ updateᵢ _Tᵢ] …))))
         #:when (attribute info)
         #:with (_ update T) #'info
 
@@ -251,40 +249,38 @@ way up, so that a simple identity function can be applied in these cases.
         (define-fold fy* ty* (List Y …) type-to-replaceᵢ …)]]
 
 @chunk[<type-cases>
-       [(U X …)
-        (define-temp-ids "_fx" (X …))
-        (define-temp-ids "_tx" (X …))
+       [(U _Xⱼ …)
+        (define-temp-ids "_fx" (_Xⱼ …))
+        (define-temp-ids "_tx" (_Xⱼ …))
         
         #:to
-        (U (_tx _Tᵢ …) …)
+        (U (_txⱼ _Tᵢ …) …)
 
         #:using
         (dispatch-union ([type-to-replaceᵢ Aᵢ predicateᵢ]
                          …)
-                        [X v ((_fx . _args) v acc)]
+                        [_Xⱼ v ((_fxⱼ . _args) v acc)]
                         …)
 
         #:with-defintitions
-        (define-fold _fx _tx X type-to-replaceᵢ …)
+        (define-fold _fxⱼ _txⱼ _Xⱼ type-to-replaceᵢ …)
         …]]
 
 @chunk[<type-cases>
-       [(tagged _name [_field (~optional :colon) _X] …
-                {~do (define-temp-ids "_fx" (_X …))}
-                {~do (define-temp-ids "_tx" (_X …))}
-                {~do (define-temp-ids "_result" (_X …))})
+       [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
 
         #:to
-        (tagged _name [_field : (_tx _Tᵢ …)] …)
+        (tagged _name [_fieldⱼ : (_txⱼ _Tᵢ …)] …)
 
         #:using
-        (let*-values ([(_result acc) ((_fx . _args) (uniform-get v _field) acc)]
+        (let*-values ([(_resultⱼ acc) ((_fxⱼ . _args) (uniform-get v _fieldⱼ)
+                                                      acc)]
                       …)
-          (values (tagged _name [_field _result] …)
+          (values (tagged _name [_fieldⱼ _resultⱼ] …)
                   acc))
 
         #:with-defintitions
-        (define-fold _fx _tx _X type-to-replaceᵢ …)
+        (define-fold _fxⱼ _txⱼ _Xⱼ type-to-replaceᵢ …)
         …]]
 
 @chunk[<type-cases>
@@ -315,7 +311,8 @@ where @racket[foldl-map] is defined as:
 @chunk[<type-cases-macro>
        (define-syntax type-cases
          (syntax-parser
-           [(_ (whole-type #:to the-type
+           [(_ sp
+               (whole-type #:to the-type
                            #:using the-code
                            #:with-defintitions the-defs (~literal …))
                #:literals (lit …)
@@ -326,7 +323,7 @@ where @racket[foldl-map] is defined as:
                                #:defaults ([(transform-defs 1) (list)])))
                …)
             #'(define/with-syntax (the-type the-code the-defs (… …))
-                (syntax-parse #'whole-type
+                (sp #'whole-type
                   #:literals (lit …)
                   [pat opts …
                    (subtemplate
