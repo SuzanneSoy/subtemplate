@@ -547,6 +547,9 @@
                             (subtemplate ([xᵢ wᵢ] … foo [zᵢ pᵢ] …))]))])])))
 
 ;; Test for arrows, with two maximal candidates tᵢ and zᵢ :
+;; the arrow should be drawn to the ᵢ in wᵢ and pᵢ from the ᵢ in the bindings
+;; for both tᵢ and zᵢ. For the uses of xᵢ, tᵢ and zᵢ, there should be only one
+;; arrow, drawn from the correponding binding.
 (syntax-parse (syntax-parse #'()
                 [()
                  (syntax-parse #'([a b] [aa bb])
@@ -557,4 +560,26 @@
                           (syntax-parse #'(cc dd)
                             [(xᵢ …)
                              (subtemplate ([xᵢ wᵢ] … tᵢ … foo [zᵢ pᵢ] …))]))])])
-  [_ 'TODO])
+  [(([x1 w1] [xx1 ww1] t1 tt1 foo1 [z1 p1] [zz1 pp1])
+    ([x2 w2] [xx2 ww2] t2 tt2 foo2 [z2 p2] [zz2 pp2]))
+   (check free-identifier=? #'x1 #'c)
+   (check free-identifier=? #'xx1 #'d)
+   (check free-identifier=? #'x2 #'cc)
+   (check free-identifier=? #'xx2 #'dd)
+   
+   (check free-identifier=? #'t1 #'a)
+   (check free-identifier=? #'tt1 #'b)
+   (check free-identifier=? #'t2 #'a)
+   (check free-identifier=? #'tt2 #'b)
+   
+   (check (∘ not free-identifier=?) #'x1 #'x2)
+   (check free-identifier=? #'w1 #'w2)
+   (check (∘ not free-identifier=?) #'xx1 #'xx2)
+   (check free-identifier=? #'ww1 #'ww2)
+   (check free-identifier=? #'t1 #'t2)
+   (check free-identifier=? #'tt1 #'tt2)
+   (check free-identifier=? #'foo1 #'foo2)
+   (check free-identifier=? #'z1 #'z2)
+   (check free-identifier=? #'p1 #'p2)
+   (check free-identifier=? #'zz1 #'zz2)
+   (check free-identifier=? #'pp1 #'pp2)])
