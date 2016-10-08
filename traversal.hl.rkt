@@ -171,12 +171,10 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<type-cases>
        [t
-        #:with info (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
-                           (syntax->list
-                            (subtemplate ([type-to-replaceᵢ updateᵢ _Tᵢ] …))))
-        #:when (attribute info)
-        #:with (_ update T) #'info
-
+        #:with (_ update T)
+        (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
+               (syntax->list (subtemplate ([type-to-replaceᵢ updateᵢ _Tᵢ] …))))
+        
         #:to
         T
 
@@ -273,7 +271,7 @@ way up, so that a simple identity function can be applied in these cases.
         (let*-values ([(_resultⱼ acc) ((_fxⱼ . _args) (uniform-get v _fieldⱼ)
                                                       acc)]
                       …)
-          (values (tagged _name [_fieldⱼ _resultⱼ] …)
+          (values (tagged _name #:instance [_fieldⱼ _resultⱼ] …)
                   acc))
 
         #:with-defintitions
