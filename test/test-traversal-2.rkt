@@ -14,14 +14,14 @@
 (define-fold f₃ t₃ (U (tagged tg [a String] [b Boolean])
                       (tagged tg [a Boolean] [c String]))
   String)
-#;(define-fold f₄ t₄ (U (tagged tg [a String] [b Boolean])
-                        String
-                        (tagged tg [a Boolean] [c String]))
-    String)
-#;(define-fold f₄ t₄ (U (tagged t0)
-                        String
-                        (tagged tg [a Boolean] [c String]))
-    String)
+(define-fold f₄ t₄ (U (tagged tg [a String] [b Boolean])
+                      String
+                      (tagged tg [a Boolean] [c String]))
+  String)
+(define-fold f₅ t₅ (U (tagged t0)
+                      String
+                      (tagged tg [a Boolean] [c String]))
+  String)
 (define-fold f₆ t₆ (U String
                       (tagged tg [a String] [b Boolean]))
   String)
@@ -53,7 +53,23 @@
            Integer)
  (tagged tg [a #t] [c 'def]) 1)
 
-#;(check-equal?-values:
+(check-equal?-values:
+   ((f₄ string? string->symbol+acc) (tagged tg [a "abc"] [b #f]) 0)
+   : (Values (U (tagged tg [a Symbol] [b Boolean])
+                Symbol
+                (tagged tg [a Boolean] [c Symbol]))
+             Integer)
+   (tagged tg [a 'abc] [b #f]) 1)
+
+(check-equal?-values:
+   ((f₄ string? string->symbol+acc) "ghi" 0)
+   : (Values (U (tagged tg [a Symbol] [b Boolean])
+                Symbol
+                (tagged tg [a Boolean] [c Symbol]))
+             Integer)
+   'ghi 1)
+
+(check-equal?-values:
    ((f₄ string? string->symbol+acc) (tagged tg [a #t] [c "def"]) 0)
    : (Values (U (tagged tg [a Symbol] [b Boolean])
                 Symbol
@@ -61,13 +77,29 @@
              Integer)
    (tagged tg [a #t] [c 'def]) 1)
 
-#;(check-equal?-values:
-   ((f₄ string? string->symbol+acc) "ghi" 0)
-   : (Values (U (tagged tg [a Symbol] [b Boolean])
+(check-equal?-values:
+   ((f₅ string? string->symbol+acc) (tagged t0 #:instance) 0)
+   : (Values (U (tagged t0)
+                Symbol
+                (tagged tg [a Boolean] [c Symbol]))
+             Integer)
+   (tagged t0 #:instance) 0)
+
+(check-equal?-values:
+   ((f₅ string? string->symbol+acc) "ghi" 0)
+   : (Values (U (tagged t0)
                 Symbol
                 (tagged tg [a Boolean] [c Symbol]))
              Integer)
    'ghi 1)
+
+(check-equal?-values:
+   ((f₅ string? string->symbol+acc) (tagged tg [a #t] [c "def"]) 0)
+   : (Values (U (tagged t0)
+                Symbol
+                (tagged tg [a Boolean] [c Symbol]))
+             Integer)
+   (tagged tg [a #t] [c 'def]) 1)
 
 (check-equal?-values:
  ((f₆ string? string->symbol+acc) (tagged tg [a "abc"] [b #f]) 0)
