@@ -3,12 +3,14 @@
 (define deps '("base"
                "rackunit-lib"
                "https://github.com/jsmaniac/phc-toolkit.git#dev"
-               "https://github.com/jsmaniac/phc-adt.git#dev"
+               "https://github.com/jsmaniac/phc-adt.git?path=phc-adt#dev"
+               "phc-adt"
                "type-expander"
                "hyper-literate"
                "scribble-enhanced"
                "typed-racket-lib"
-               "srfi-lite-lib"))
+               "srfi-lite-lib"
+               "delay-pure"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
