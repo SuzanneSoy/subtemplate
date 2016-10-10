@@ -4,7 +4,6 @@
                "rackunit-lib"
                "https://github.com/jsmaniac/phc-toolkit.git#dev"
                "https://github.com/jsmaniac/phc-adt.git?path=phc-adt#dev"
-               "phc-adt"
                "type-expander"
                "hyper-literate"
                "scribble-enhanced"
