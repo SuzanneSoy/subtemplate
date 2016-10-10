@@ -59,7 +59,7 @@
                with-continuation-mark
                #%app #%top #%expression #%variable-reference)
   (pattern :id)
-  (pattern (#%plain-lambda :formals :expr …+))
+  (pattern (lambda :formals :expr …+))
   (pattern (case-lambda (:formals :expr …+) …))
   (pattern (if :expr :expr :expr))
   (pattern (begin :expr …+))
@@ -77,7 +77,7 @@
   (pattern (quote-syntax _datum))
   (pattern (quote-syntax _datum #:local))
   (pattern (with-continuation-mark :expr :expr :expr))
-  (pattern (#%plain-app :expr …+))
+  (pattern (#%app :expr …+))
   (pattern (#%top . :id))
   (pattern (#%expression :expr))
   (pattern (#%variable-reference :id))
