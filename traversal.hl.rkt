@@ -137,9 +137,10 @@ not expressed syntactically using the @racket[Foo] identifier.
            (define/with-syntax thunk-result (thunk))
            (with-syntax ([([f-id . f-body] …) (unbox (get-f-defs))]
                          [([τ-id . τ-body] …) (unbox (get-τ-defs))])
-             #`(begin (define-type τ-id τ-body) …
-                      (define f-id f-body) …
-                      thunk-result))))]
+             ((λ (x) (displayln x) x)
+              #`(begin (define-type τ-id τ-body) …
+                       (define f-id f-body) …
+                       thunk-result)))))]
 
 @;@subsection{…}
 
@@ -171,7 +172,8 @@ way up, so that a simple identity function can be applied in these cases.
                                                (syntax->list
                                                 (subtemplate
                                                  ([_type-to-replaceᵢ . _Tᵢ] …))))))
-                    ((λ (x) (displayln "τ=") (pretty-write (syntax->datum x)) x)
+                    (printf "Start ~a ~a =>\n" (syntax->datum τ-) #'_whole-type)
+                    ((λ (x) (printf "~a ~a =>\n" (syntax->datum τ-) #'_whole-type) (pretty-write (syntax->datum x)) x)
                      (quasisubtemplate
                       (∀ (_Tᵢ …)
                          #,(syntax-parse #'_whole-type
@@ -186,11 +188,11 @@ way up, so that a simple identity function can be applied in these cases.
                (error "fold-type and fold-f must be called within with-folds"))
              (if (dict-has-key? cache key)
                  (dict-ref cache key)
-                 (let ([new-def #`#,(gensym 'base)])
-                   (dict-set! cache key new-def)
+                 (let ([base #`#,(gensym 'base)])
+                   (dict-set! cache key base)
                    (let ([result (let () . body)])
-                     (set-box! defs `([,new-def . ,result] . ,(unbox defs)))
-                     new-def))))))]
+                     (set-box! defs `([,base . ,result] . ,(unbox defs)))
+                     base))))))]
 
 @CHUNK[<define-fold>
        (define-for-syntax (replace-in-instance stx)
@@ -214,22 +216,27 @@ way up, so that a simple identity function can be applied in these cases.
                                         (subtemplate
                                          ([_type-to-replaceᵢ . _updateᵢ] …))))))
             (define/with-syntax _args (subtemplate ({?@ _predicateᵢ _updateᵢ} …)))
-            (quasisubtemplate
-             (ann (λ ({?@ _predicateᵢ _updateᵢ} …)
-                    (λ (v acc)
-                      #,(syntax-parse #'_whole-type
-                          #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-                          <f-cases>)))
-                  (∀ (_Aᵢ … _Bᵢ … Acc)
-                     (→ (?@ (→ Any Boolean : _Aᵢ)
-                            (→ _Aᵢ Acc (Values _Bᵢ Acc)))
-                        …
-                        (→ #,(replace-in-type (subtemplate (_whole-type
-                                                            [_type-to-replaceᵢ _Aᵢ] …)))
-                           Acc
-                           (Values #,(replace-in-type (subtemplate (_whole-type
-                                                                    [_type-to-replaceᵢ _Bᵢ] …)))
-                                   Acc))))))]))]
+            (cached [f-
+                     (get-f-cache)
+                     (get-f-defs)
+                     #'(_whole-type _type-to-replaceᵢ …)]
+                    ((λ (x) (printf "f ~a =>\n" #'_whole-type) (pretty-write (syntax->datum x)) x)
+                     (quasisubtemplate
+                      (ann (λ ({?@ _predicateᵢ _updateᵢ} …)
+                             (λ (v acc)
+                               #,(syntax-parse #'_whole-type
+                                   #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                                   <f-cases>)))
+                           (∀ (_Aᵢ … _Bᵢ … Acc)
+                              (→ (?@ (→ Any Boolean : _Aᵢ)
+                                     (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                                 …
+                                 (→ #,(replace-in-type (subtemplate (_whole-type
+                                                                     [_type-to-replaceᵢ _Aᵢ] …)))
+                                    Acc
+                                    (Values #,(replace-in-type (subtemplate (_whole-type
+                                                                             [_type-to-replaceᵢ _Bᵢ] …)))
+                                            Acc))))))))]))]
 
 @chunk[<f-cases>
        [t
@@ -245,10 +252,12 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<type-cases>
        [(~or Null (List))
+        (displayln "Null case")
         (subtemplate Null)]]
 
 @chunk[<f-cases>
        [(~or Null (List))
+        (displayln "Null case")
         (subtemplate (values v acc))]]
 
 
@@ -295,12 +304,18 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(List X Y …)
+        (newline)
+        (displayln "(List X Y …) case")
+        (displayln #'(List Y …))
+        (displayln (replace-in-type #'((List Y …) . rec-args)))
         (quasisubtemplate
          (Pairof #,(replace-in-type #'(X . rec-args))
                  #,(replace-in-type #'((List Y …) . rec-args))))]]
 
 @CHUNK[<f-cases>
        [(List X Y …)
+        (newline)
+        (displayln "(List X Y …) case")
         (quasisubtemplate
          (let*-values ([(result-x acc-x) (#,(replace-in-instance #'(X . rec-args))
                                           (car v)
@@ -313,23 +328,24 @@ way up, so that a simple identity function can be applied in these cases.
 @CHUNK[<type-cases>
        [(U _Xⱼ …)
         (quasisubtemplate
-         (U #,@(stx-map (λ (_x) (replace-in-type #'(_x . rec-args)))
+         (U #,@(stx-map (λ (_x) (replace-in-type #`(#,_x . rec-args)))
                         (subtemplate (_Xⱼ …)))))]]
 
 @CHUNK[<f-cases>
        [(U _Xⱼ …)
-        (quasisubtemplate
-         (dispatch-union v
-                         ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
-                         #,@(stx-map (λ (_x)
-                                       #`[_x (#,(replace-in-instance #'(_x . rec-args)) v acc)])
-                                     (subtemplate (_Xⱼ …)))))]]
+        ((λ (x) (displayln x) x)
+         (quasisubtemplate
+          (dispatch-union v
+                          ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
+                          #,@(stx-map (λ (_x)
+                                        #`[#,_x (#,(replace-in-instance #`(#,_x . rec-args)) v acc)])
+                                      (subtemplate (_Xⱼ …))))))]]
 
 @CHUNK[<type-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
         (quasisubtemplate
          (tagged _name #,@(stx-map (λ (_field _x)
-                                     #`[_field : #,(replace-in-type #'(_x . rec-args))])
+                                     #`[#,_field : #,(replace-in-type #`(#,_x . rec-args))])
                                    (subtemplate (_fieldⱼ …))
                                    (subtemplate (_Xⱼ …)))))]]
 
@@ -337,11 +353,11 @@ way up, so that a simple identity function can be applied in these cases.
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
         (quasisubtemplate
          (let*-values (#,@(stx-map (λ ( _result _field _x)
-                                     #`[(_result acc)
-                                        (#,(replace-in-instance #'(_x . rec-args)) (uniform-get v _field)
-                                                                                   acc)])
-                                   (subtemplate (_fieldⱼ …))
+                                     #`[(#,_result acc)
+                                        (#,(replace-in-instance #`(#,_x . rec-args)) (uniform-get v #,_field)
+                                                                                     acc)])
                                    (subtemplate (_resultⱼ …))
+                                   (subtemplate (_fieldⱼ …))
                                    (subtemplate (_Xⱼ …))))
            (values (tagged _name #:instance [_fieldⱼ _resultⱼ] …)
                    acc)))]]

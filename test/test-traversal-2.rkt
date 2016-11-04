@@ -112,4 +112,3 @@
               Symbol)
            Integer)
  'ghi 1)
-

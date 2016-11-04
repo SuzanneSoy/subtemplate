@@ -36,7 +36,10 @@
           (let ([b-key (prefab-struct-key b)])
             (and (equal? a-key b-key)
                  (rec=? (struct->list a)
-                        (struct->list b)))))]))
+                        (struct->list b)))))]
+    [(null? a) (null? b)]
+    [else (error (format "Unexpected value for free-id-tree=? : ~a"
+                         a))]))
 
 (define ((free-id-tree-hash hc) a)
   (define rec-hash (free-id-tree-hash hc))

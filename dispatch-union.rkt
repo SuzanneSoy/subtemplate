@@ -37,7 +37,6 @@
     (pattern [other result]
              #:with clause #`[else result]))
 
-  
   ((λ (x) (local-require racket/pretty) #;(pretty-write (syntax->datum x)) x)
    (syntax-parse #'([Xⱼ resultⱼ] …)
      [({~or to-replace:to-replace
