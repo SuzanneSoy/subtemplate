@@ -135,10 +135,11 @@ not expressed syntactically using the @racket[Foo] identifier.
                         [get-τ-defs (box '())])
            (displayln (list 'context= (syntax-local-context)))
            (define/with-syntax thunk-result (thunk))
-           (with-syntax ([([f-id . f-body] …) (unbox (get-f-defs))]
+           (with-syntax ([([f-id f-body f-type] …) (unbox (get-f-defs))]
                          [([τ-id . τ-body] …) (unbox (get-τ-defs))])
              ((λ (x) (displayln x) x)
               #`(begin (define-type τ-id τ-body) …
+                       (: f-id f-type) …
                        (define f-id f-body) …
                        thunk-result)))))]
 
@@ -220,23 +221,23 @@ way up, so that a simple identity function can be applied in these cases.
                      (get-f-cache)
                      (get-f-defs)
                      #'(_whole-type _type-to-replaceᵢ …)]
-                    ((λ (x) (printf "f ~a =>\n" #'_whole-type) (pretty-write (syntax->datum x)) x)
+                    ((λ (x) (printf "~a ~a =>\n" (syntax->datum f-) #'_whole-type) (pretty-write (syntax->datum x)) x)
                      (quasisubtemplate
-                      (ann (λ ({?@ _predicateᵢ _updateᵢ} …)
-                             (λ (v acc)
-                               #,(syntax-parse #'_whole-type
-                                   #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-                                   <f-cases>)))
-                           (∀ (_Aᵢ … _Bᵢ … Acc)
-                              (→ (?@ (→ Any Boolean : _Aᵢ)
-                                     (→ _Aᵢ Acc (Values _Bᵢ Acc)))
-                                 …
-                                 (→ #,(replace-in-type (subtemplate (_whole-type
-                                                                     [_type-to-replaceᵢ _Aᵢ] …)))
-                                    Acc
-                                    (Values #,(replace-in-type (subtemplate (_whole-type
-                                                                             [_type-to-replaceᵢ _Bᵢ] …)))
-                                            Acc))))))))]))]
+                      [(λ ({?@ _predicateᵢ _updateᵢ} …)
+                         (λ (v acc)
+                           #,(syntax-parse #'_whole-type
+                               #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                               <f-cases>)))
+                       (∀ (_Aᵢ … _Bᵢ … Acc)
+                          (→ (?@ (→ Any Boolean : _Aᵢ)
+                                 (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                             …
+                             (→ #,(replace-in-type (subtemplate (_whole-type
+                                                                 [_type-to-replaceᵢ _Aᵢ] …)))
+                                Acc
+                                (Values #,(replace-in-type (subtemplate (_whole-type
+                                                                         [_type-to-replaceᵢ _Bᵢ] …)))
+                                        Acc))))])))]))]
 
 @chunk[<f-cases>
        [t
@@ -252,12 +253,10 @@ way up, so that a simple identity function can be applied in these cases.
 
 @chunk[<type-cases>
        [(~or Null (List))
-        (displayln "Null case")
         (subtemplate Null)]]
 
 @chunk[<f-cases>
        [(~or Null (List))
-        (displayln "Null case")
         (subtemplate (values v acc))]]
 
 
@@ -304,18 +303,12 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(List X Y …)
-        (newline)
-        (displayln "(List X Y …) case")
-        (displayln #'(List Y …))
-        (displayln (replace-in-type #'((List Y …) . rec-args)))
         (quasisubtemplate
          (Pairof #,(replace-in-type #'(X . rec-args))
                  #,(replace-in-type #'((List Y …) . rec-args))))]]
 
 @CHUNK[<f-cases>
        [(List X Y …)
-        (newline)
-        (displayln "(List X Y …) case")
         (quasisubtemplate
          (let*-values ([(result-x acc-x) (#,(replace-in-instance #'(X . rec-args))
                                           (car v)
