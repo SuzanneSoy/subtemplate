@@ -162,8 +162,7 @@ way up, so that a simple identity function can be applied in these cases.
        (define-for-syntax fold-type
          (syntax-parser
            [(_whole-type:type _type-to-replaceᵢ:type …)
-            #:with rec-args (subtemplate
-                             ([_type-to-replaceᵢ _Tᵢ] …))
+            #:with rec-args #'([_type-to-replaceᵢ _Tᵢ] …)
             (cached [τ-
                      (get-τ-cache)
                      (get-τ-defs)
@@ -171,15 +170,13 @@ way up, so that a simple identity function can be applied in these cases.
                     (define replacements (make-immutable-free-id-tree-table
                                           (map syntax-e
                                                (syntax->list
-                                                (subtemplate
-                                                 ([_type-to-replaceᵢ . _Tᵢ] …))))))
+                                                #'([_type-to-replaceᵢ . _Tᵢ] …)))))
                     (printf "Start ~a ~a =>\n" (syntax->datum τ-) #'_whole-type)
                     ((λ (x) (printf "~a ~a =>\n" (syntax->datum τ-) #'_whole-type) (pretty-write (syntax->datum x)) x)
-                     (quasisubtemplate
-                      (∀ (_Tᵢ …)
-                         #,(syntax-parse #'_whole-type
-                             #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-                             <type-cases>)))))]))]
+                     #`(∀ (_Tᵢ …)
+                          #,(syntax-parse #'_whole-type
+                              #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                              <type-cases>))))]))]
 
 @CHUNK[<cached>
        (begin-for-syntax
@@ -201,169 +198,152 @@ way up, so that a simple identity function can be applied in these cases.
            [(_whole-type
              [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
             ;+ cache
-            (quasisubtemplate
-             (#,(fold-f #'(_whole-type _type-to-replaceᵢ …))
-              {?@ _predicateᵢ _updateᵢ} …))]))]
+            #`(#,(fold-f #'(_whole-type _type-to-replaceᵢ …))
+               {?@ _predicateᵢ _updateᵢ} …)]))]
 
 @CHUNK[<define-fold>
        (define-for-syntax fold-f
          (syntax-parser
            [(_whole-type:type _type-to-replaceᵢ:type …)
-            #:with rec-args (subtemplate
-                             ([_type-to-replaceᵢ _predicateᵢ _updateᵢ] …))
+            #:with rec-args #'([_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
             (define replacements (make-immutable-free-id-tree-table
                                   (map syntax-e
                                        (syntax->list
-                                        (subtemplate
-                                         ([_type-to-replaceᵢ . _updateᵢ] …))))))
-            (define/with-syntax _args (subtemplate ({?@ _predicateᵢ _updateᵢ} …)))
+                                        #'([_type-to-replaceᵢ . _updateᵢ] …)))))
+            (define/with-syntax _args #'({?@ _predicateᵢ _updateᵢ} …))
             (cached [f-
                      (get-f-cache)
                      (get-f-defs)
                      #'(_whole-type _type-to-replaceᵢ …)]
                     ((λ (x) (printf "~a ~a =>\n" (syntax->datum f-) #'_whole-type) (pretty-write (syntax->datum x)) x)
-                     (quasisubtemplate
-                      [(λ ({?@ _predicateᵢ _updateᵢ} …)
-                         (λ (v acc)
-                           #,(syntax-parse #'_whole-type
-                               #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-                               <f-cases>)))
-                       (∀ (_Aᵢ … _Bᵢ … Acc)
-                          (→ (?@ (→ Any Boolean : _Aᵢ)
-                                 (→ _Aᵢ Acc (Values _Bᵢ Acc)))
-                             …
-                             (→ #,(replace-in-type (subtemplate (_whole-type
-                                                                 [_type-to-replaceᵢ _Aᵢ] …)))
-                                Acc
-                                (Values #,(replace-in-type (subtemplate (_whole-type
-                                                                         [_type-to-replaceᵢ _Bᵢ] …)))
-                                        Acc))))])))]))]
+                     #`[(λ ({?@ _predicateᵢ _updateᵢ} …)
+                          (λ (v acc)
+                            #,(syntax-parse #'_whole-type
+                                #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                                <f-cases>)))
+                        (∀ (_Aᵢ … _Bᵢ … Acc)
+                           (→ (?@ (→ Any Boolean : _Aᵢ)
+                                  (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                              …
+                              (→ #,(replace-in-type #'(_whole-type
+                                                       [_type-to-replaceᵢ _Aᵢ] …))
+                                 Acc
+                                 (Values #,(replace-in-type #'(_whole-type
+                                                               [_type-to-replaceᵢ _Bᵢ] …))
+                                         Acc))))]))]))]
 
 @chunk[<f-cases>
        [t
         #:when (dict-has-key? replacements #'t)
         #:with _update (dict-ref replacements #'t)
-        (subtemplate (_update v acc))]]
+        #'(_update v acc)]]
 
 @chunk[<type-cases>
        [t
         #:when (dict-has-key? replacements #'t)
         #:with _T (dict-ref replacements #'t)
-        (subtemplate _T)]]
+        #'_T]]
 
 @chunk[<type-cases>
        [(~or Null (List))
-        (subtemplate Null)]]
+        #'Null]]
 
 @chunk[<f-cases>
        [(~or Null (List))
-        (subtemplate (values v acc))]]
+        #'(values v acc)]]
 
 
 @CHUNK[<type-cases>
        [(Pairof X Y)
-        (quasisubtemplate (Pairof #,(replace-in-type #'(X . rec-args))
-                                  #,(replace-in-type #'(Y . rec-args))))]]
+        #`(Pairof #,(replace-in-type #'(X . rec-args))
+                  #,(replace-in-type #'(Y . rec-args)))]]
 
 @CHUNK[<f-cases>
        [(Pairof X Y)
-        (quasisubtemplate
-         (let*-values ([(result-x acc-x)
-                        (#,(replace-in-instance #'(X . rec-args)) (car v) acc)]
-                       [(result-y acc-y)
-                        (#,(replace-in-instance #'(Y . rec-args)) (cdr v) acc-x)])
-           (values (cons result-x result-y) acc-y)))]]
+        #`(let*-values ([(result-x acc-x)
+                         (#,(replace-in-instance #'(X . rec-args)) (car v) acc)]
+                        [(result-y acc-y)
+                         (#,(replace-in-instance #'(Y . rec-args)) (cdr v) acc-x)])
+            (values (cons result-x result-y) acc-y))]]
 
 @CHUNK[<type-cases>
        [(Listof X)
-        (quasisubtemplate
-         (Listof #,(replace-in-type #'(X . rec-args))))]]
+        #`(Listof #,(replace-in-type #'(X . rec-args)))]]
 
 @CHUNK[<f-cases>
        [(Listof X)
-        (quasisubtemplate
-         (foldl-map #,(replace-in-instance #'(X . rec-args))
-                    acc v))]]
+        #`(foldl-map #,(replace-in-instance #'(X . rec-args))
+                     acc v)]]
 
 @CHUNK[<type-cases>
        [(Vectorof X)
-        (quasisubtemplate
-         ;; TODO: turn replace-in-type & co into rec-replace via metafunctions
-         (Vectorof #,(replace-in-type #'(X . rec-args))))]]
+        ;; TODO: turn replace-in-type & co into rec-replace via metafunctions
+        #`(Vectorof #,(replace-in-type #'(X . rec-args)))]]
 
 @CHUNK[<ftype-cases>
        [(Vectorof X)
-        (quasisubtemplate
-         (vector->immutable-vector
-          (list->vector
-           (foldl-map #,(replace-in-instance #'(X . rec-args))
-                      acc
-                      (vector->list v)))))]]
+        #`(vector->immutable-vector
+           (list->vector
+            (foldl-map #,(replace-in-instance #'(X . rec-args))
+                       acc
+                       (vector->list v))))]]
 
 
 @CHUNK[<type-cases>
        [(List X Y …)
-        (quasisubtemplate
-         (Pairof #,(replace-in-type #'(X . rec-args))
-                 #,(replace-in-type #'((List Y …) . rec-args))))]]
+        #`(Pairof #,(replace-in-type #'(X . rec-args))
+                  #,(replace-in-type #'((List Y …) . rec-args)))]]
 
 @CHUNK[<f-cases>
        [(List X Y …)
-        (quasisubtemplate
-         (let*-values ([(result-x acc-x) (#,(replace-in-instance #'(X . rec-args))
-                                          (car v)
-                                          acc)]
-                       [(result-y* acc-y*) (#,(replace-in-instance #'((List Y …) . rec-args))
-                                            (cdr v)
-                                            acc-x)])
-           (values (cons result-x result-y*) acc-y*)))]]
+        #`(let*-values ([(result-x acc-x) (#,(replace-in-instance #'(X . rec-args))
+                                           (car v)
+                                           acc)]
+                        [(result-y* acc-y*) (#,(replace-in-instance #'((List Y …) . rec-args))
+                                             (cdr v)
+                                             acc-x)])
+            (values (cons result-x result-y*) acc-y*))]]
 
 @CHUNK[<type-cases>
        [(U _Xⱼ …)
-        (quasisubtemplate
-         (U #,@(stx-map (λ (_x) (replace-in-type #`(#,_x . rec-args)))
-                        (subtemplate (_Xⱼ …)))))]]
+        #`(U #,@(stx-map (λ (_x) (replace-in-type #`(#,_x . rec-args)))
+                         #'(_Xⱼ …)))]]
 
 @CHUNK[<f-cases>
        [(U _Xⱼ …)
         ((λ (x) (displayln x) x)
-         (quasisubtemplate
-          (dispatch-union v
-                          ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
-                          #,@(stx-map (λ (_x)
-                                        #`[#,_x (#,(replace-in-instance #`(#,_x . rec-args)) v acc)])
-                                      (subtemplate (_Xⱼ …))))))]]
+         #`(dispatch-union v
+                           ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
+                           #,@(stx-map (λ (_x)
+                                         #`[#,_x (#,(replace-in-instance #`(#,_x . rec-args)) v acc)])
+                                       #'(_Xⱼ …))))]]
 
 @CHUNK[<type-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
-        (quasisubtemplate
-         (tagged _name #,@(stx-map (λ (_field _x)
-                                     #`[#,_field : #,(replace-in-type #`(#,_x . rec-args))])
-                                   (subtemplate (_fieldⱼ …))
-                                   (subtemplate (_Xⱼ …)))))]]
+        #`(tagged _name #,@(stx-map (λ (_field _x)
+                                      #`[#,_field : #,(replace-in-type #`(#,_x . rec-args))])
+                                    #'(_fieldⱼ …)
+                                    #'(_Xⱼ …)))]]
 
 @CHUNK[<f-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
-        (quasisubtemplate
-         (let*-values (#,@(stx-map (λ ( _result _field _x)
-                                     #`[(#,_result acc)
-                                        (#,(replace-in-instance #`(#,_x . rec-args)) (uniform-get v #,_field)
-                                                                                     acc)])
-                                   (subtemplate (_resultⱼ …))
-                                   (subtemplate (_fieldⱼ …))
-                                   (subtemplate (_Xⱼ …))))
-           (values (tagged _name #:instance [_fieldⱼ _resultⱼ] …)
-                   acc)))]]
+        #`(let*-values (#,@(stx-map (λ ( _result _field _x)
+                                      #`[(#,_result acc)
+                                         (#,(replace-in-instance #`(#,_x . rec-args)) (uniform-get v #,_field)
+                                                                                      acc)])
+                                    #'(_resultⱼ …)
+                                    #'(_fieldⱼ …)
+                                    #'(_Xⱼ …)))
+            (values (tagged _name #:instance [_fieldⱼ _resultⱼ] …)
+                    acc))]]
 
 @chunk[<type-cases>
        [else-T
-        (subtemplate
-         else-T)]]
+        #'else-T]]
 
 @chunk[<f-cases>
        [else-T
-        (subtemplate
-         (values v acc))]]
+        #'(values v acc)]]
 
 
 
@@ -411,16 +391,18 @@ where @racket[foldl-map] is defined as:
                 type-expander
                 phc-adt
                 "dispatch-union.rkt"
-                (for-syntax "subtemplate.rkt"
-                            (subtract-in racket/base "subtemplate.rkt")
-                            phc-toolkit/untyped
-                            racket/syntax
-                            (subtract-in syntax/parse "subtemplate.rkt")
-                            syntax/parse/experimental/template
-                            type-expander/expander
-                            "free-identifier-tree-equal.rkt"
-                            racket/dict
-                            racket/pretty)
+                (for-syntax  "subtemplate-override.rkt"
+                             (subtract-in racket/base
+                                          "subtemplate-override.rkt")
+                             phc-toolkit/untyped
+                             racket/syntax
+                             (subtract-in syntax/parse
+                                          "subtemplate-override.rkt")
+                             syntax/parse/experimental/template
+                             type-expander/expander
+                             "free-identifier-tree-equal.rkt"
+                             racket/dict
+                             racket/pretty)
                 (for-meta 2 racket/base)
                 (for-meta 2 phc-toolkit/untyped)
                 (for-meta 2 syntax/parse)
