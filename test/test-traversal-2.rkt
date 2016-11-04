@@ -7,8 +7,6 @@
          "../dispatch-union.rkt") ;; DEBUG
 (adt-init)
 
-#;(define-type Foo (Listof String))
-
 (define-fold f₁ t₁ (tagged tg [a String] [b Boolean]) String)
 (define-fold f₂ t₂ (U (tagged tg [a String] [b Boolean])) String)
 (define-fold f₃ t₃ (U (tagged tg [a String] [b Boolean])

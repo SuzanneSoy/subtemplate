@@ -8,6 +8,8 @@
           (for-label racket/format
                      racket/promise
                      racket/list
+                     syntax/parse
+                     syntax/parse/experimental/template
                      type-expander
                      (except-in (subtract-in typed/racket/base type-expander)
                                 values)
@@ -86,10 +88,10 @@ not expressed syntactically using the @racket[Foo] identifier.
                                Acc))))]
 
  We use the @racket[?@] notation from
- @racket[syntax/parse/experimental/template] to indicate that the function
- accepts a predicate, followed by an update function, followed by another
- predicate, and so on. For example, the function type when there are three
- @racket[type-to-replaceᵢ] would be:
+ @racketmodname[syntax/parse/experimental/template] to indicate that the
+ function accepts a predicate, followed by an update function, followed by
+ another predicate, and so on. For example, the function type when there are
+ three @racket[type-to-replaceᵢ] would be:
 
  @racketblock[(∀ (A₁ A₂ A₃ B₁ B₂ B₃ Acc)
                  (→ (→ Any Boolean : A₁)
@@ -116,30 +118,256 @@ not expressed syntactically using the @racket[Foo] identifier.
  calls to all update functions, so that the update functions can communicate
  state in a functional way.}
 
+@section{Implementation}
 
-* free-identifier-tree=?
+@subsection{Caching the results of @racket[define-fold]}
+
+@chunk[<with-folds>
+       (define-for-syntax get-with-folds-cache (make-parameter #f))
+       (define-syntax (with-folds stx)
+         (syntax-case stx ()
+           [(_ . body*)
+            (parameterize ([get-with-folds-cache (mutable-hash)])
+              (define expanded-body (local-expand #'(begin . body*)
+                                                  (syntax-local-context)
+                                                  '()))
+              (define/with-syntax (cached-definition …)
+                (append-map (λ (key cached)
+                              (with-syntax ([(f-id τ-id f-body τ-body) def-ids])
+                                (list #'(define-type τ-id τ-body)
+                                      #'(define f-id f-body))))
+                            (hash->list (get-with-folds-cache))))
+              #`(begin cached-definition …
+                       expanded-body))]))]
+
+@;@subsection{…}
+
+
+* free-id-tree=?
 * cache of already-seen types
 * recursively go down the tree. If there are no replacements, return #f all the
 way up, so that a simple identity function can be applied in these cases.
 
+
+@CHUNK[<define-fold>
+       (define-type-expander (replace-in-type stx)
+         (syntax-case stx ()
+           [(_ _whole-type [_type-to-replaceᵢ _Tᵢ] …)
+            ;+ cache
+            #'((fold-type _whole-type _type-to-replaceᵢ …) _Tᵢ …)]))
+       (define-type-expander fold-type
+         (syntax-parser
+           [(_ _whole-type:type _type-to-replaceᵢ:type …)
+            #:with rec-args (subtemplate
+                             ([_type-to-replaceᵢ _Tᵢ] …))
+            (define replacements (make-immutable-free-id-tree-table
+                                  (map syntax-e
+                                       (syntax->list
+                                        (subtemplate
+                                         ([_type-to-replaceᵢ . _Tᵢ] …))))))
+            #;(define-template-metafunction (rec-replace stx)
+              (syntax-case stx ()
+                [(_ τ) #'(replace-in-type τ . rec-args)]))
+            ((λ (x) (displayln "τ=") (pretty-write (syntax->datum x)) x)
+             (quasisubtemplate
+              (∀ (_Tᵢ …)
+                 #,(syntax-parse #'_whole-type
+                       #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                       <type-cases>))))]))]
+
+@CHUNK[<define-fold>
+       (define-syntax (replace-in-instance stx)
+         (syntax-case stx ()
+           [(_ _whole-type
+               [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
+            ;+ cache
+            (subtemplate
+             ((fold-f _whole-type _type-to-replaceᵢ …)
+              {?@ _predicateᵢ _updateᵢ} …))]))
+       
+       (define-syntax fold-f
+         (syntax-parser
+           [(_ _whole-type:type _type-to-replaceᵢ:type …)
+            #:with rec-args (subtemplate
+                             ([_type-to-replaceᵢ _predicateᵢ _updateᵢ] …))
+            (define replacements (make-immutable-free-id-tree-table
+                                  (map syntax-e
+                                       (syntax->list
+                                        (subtemplate
+                                         ([_type-to-replaceᵢ . _updateᵢ] …))))))
+            #;(define-template-metafunction (λrec-replace stx)
+              (syntax-case stx ()
+                [(_ τ)
+                 #'(replace-in-instance τ . rec-args)]))
+            #;(define-template-metafunction (rec-replace stx)
+              (syntax-case stx ()
+                [(_ τ v acc)
+                 #'((replace-in-instance τ . rec-args) v acc)]))
+            (define/with-syntax _args (subtemplate ({?@ _predicateᵢ _updateᵢ} …)))
+            ((λ (x) (displayln "f=") (pretty-write (syntax->datum x)) x)
+             (quasisubtemplate
+              (ann (λ ({?@ _predicateᵢ _updateᵢ} …)
+                     (λ (v acc)
+                       #,(syntax-parse #'_whole-type
+                             #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                             <f-cases>)))
+                   (∀ (_Aᵢ … _Bᵢ … Acc)
+                      (→ (?@ (→ Any Boolean : _Aᵢ)
+                             (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                         …
+                         (→ (replace-in-type _whole-type
+                                             [_type-to-replaceᵢ _Aᵢ] …)
+                            Acc
+                            (Values (replace-in-type _whole-type
+                                             [_type-to-replaceᵢ _Bᵢ] …)
+                                    Acc)))))))]))]
+
+@chunk[<f-cases>
+       [t
+        #:when (dict-has-key? replacements #'t)
+        #:with _update (dict-ref replacements #'t)
+        (subtemplate (_update v acc))]]
+
+@chunk[<type-cases>
+       [t
+        #:when (dict-has-key? replacements #'t)
+        #:with _T (dict-ref replacements #'t)
+        (subtemplate _T)]]
+
+@chunk[<type-cases>
+       [(~or Null (List))
+        (subtemplate Null)]]
+
+@chunk[<f-cases>
+       [(~or Null (List))
+        (subtemplate (values v acc))]]
+
+
+@chunk[<type-cases>
+       [(Pairof X Y)
+        (subtemplate (Pairof (replace-in-type X . rec-args)
+                             (replace-in-type Y . rec-args)))]]
+
+@chunk[<f-cases>
+       [(Pairof X Y)
+        (subtemplate
+         (let*-values ([(result-x acc-x)
+                        ((replace-in-instance X . rec-args) (car v) acc)]
+                       [(result-y acc-y)
+                        ((replace-in-instance Y . rec-args) (cdr v) acc-x)])
+           (values (cons result-x result-y) acc-y)))]]
+
+@chunk[<type-cases>
+       [(Listof X)
+        (subtemplate
+         (Listof (replace-in-type X . rec-args)))]]
+
+@chunk[<f-cases>
+       [(Listof X)
+        (subtemplate
+         (foldl-map (replace-in-instance X . rec-args)
+                    acc v))]]
+
+@chunk[<type-cases>
+       [(Vectorof X)
+        (subtemplate
+         ;; TODO: turn replace-in-type & co into rec-replace via metafunctions
+         (Vectorof (replace-in-type X . rec-args)))]]
+
+@chunk[<ftype-cases>
+       [(Vectorof X)
+        (subtemplate
+         (vector->immutable-vector
+          (list->vector
+           (foldl-map (replace-in-instance X . rec-args) acc (vector->list v)))))]]
+
+
+@chunk[<type-cases>
+       [(List X Y …)
+        (subtemplate
+         (Pairof (replace-in-type X . rec-args)
+                 (replace-in-type (List Y …) . rec-args)))]]
+
+@chunk[<f-cases>
+       [(List X Y …)
+        (subtemplate
+         (let*-values ([(result-x acc-x) ((replace-in-instance X . rec-args)
+                                          (car v)
+                                          acc)]
+                       [(result-y* acc-y*) ((replace-in-instance (List Y …) . rec-args)
+                                            (cdr v)
+                                            acc-x)])
+           (values (cons result-x result-y*) acc-y*)))]]
+
+@chunk[<type-cases>
+       [(U _Xⱼ …)
+        (subtemplate
+         (U (replace-in-type _Xⱼ . rec-args) …))]]
+
+@chunk[<f-cases>
+       [(U _Xⱼ …)
+        (subtemplate
+         (dispatch-union v
+                         ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
+                         [_Xⱼ ((replace-in-instance _Xⱼ . rec-args) v acc)] …))]]
+
+@chunk[<type-cases>
+       [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
+        (subtemplate
+         (tagged _name [_fieldⱼ : (replace-in-type _Xⱼ . rec-args)] …))]]
+
+@chunk[<f-cases>
+       [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
+        (subtemplate
+         (let*-values ([(_resultⱼ acc)
+                        ((replace-in-instance _Xⱼ . rec-args) (uniform-get v _fieldⱼ)
+                                                              acc)]
+                       …)
+           (values (tagged _name #:instance [_fieldⱼ _resultⱼ] …)
+                   acc)))]]
+
+@chunk[<type-cases>
+       [else-T
+        (subtemplate
+         else-T)]]
+
+@chunk[<f-cases>
+       [else-T
+        (subtemplate
+         (values v acc))]]
+
+
+
+------
+
+
+
 @chunk[<define-fold>
-       (begin-for-syntax
-         (define-syntax-rule (barr body)
-           body))
        (define-syntax define-fold
          (syntax-parser
            [(_ _function-name:id
                _type-name:id
                whole-type:type
-               type-to-replaceᵢ:type …)
-            <define-fold-prepare>
-            ((λ (x)
-               (local-require racket/pretty)
-               #;(pretty-write (syntax->datum x))
-               x)
-             (subtemplate
-              (begin
-                <define-fold-result>)))]))]
+               _type-to-replaceᵢ:type …)
+            #'(begin
+                (define-type _type-name
+                  (fold-type whole-type _type-to-replaceᵢ …))
+                (define _function-name
+                  (fold-f whole-type _type-to-replaceᵢ …)))]))
+       #;(define-syntax define-fold
+           (syntax-parser
+             [(_ _function-name:id
+                 _type-name:id
+                 whole-type:type
+                 _type-to-replaceᵢ:type …)
+              <define-fold-prepare>
+              ((λ (x)
+                 (local-require racket/pretty)
+                 #;(pretty-write (syntax->datum x))
+                 x)
+               (subtemplate
+                (begin
+                  <define-fold-result>)))]))]
 
 @chunk[<define-fold-result>
        the-defs …
@@ -158,7 +386,7 @@ way up, so that a simple identity function can be applied in these cases.
          _the-code)]
 
 @chunk[<define-fold-prepare>
-       (define/with-syntax _args (subtemplate ({?@ predicateᵢ updateᵢ} …)))]
+       (define/with-syntax _args (subtemplate ({?@ _predicateᵢ _updateᵢ} …)))]
 
 @chunk[<define-fold-prepare>
        (type-cases
@@ -167,13 +395,13 @@ way up, so that a simple identity function can be applied in these cases.
                     #:using _the-code
                     #:with-defintitions the-defs …)
         #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-        <type-cases>)]
+        <old-type-cases>)]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [t
         #:with (_ update T)
-        (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
-               (syntax->list (subtemplate ([type-to-replaceᵢ updateᵢ _Tᵢ] …))))
+        (findf (λ (r) (free-id-tree=? #'t (stx-car r)))
+               (syntax->list (subtemplate ([_type-to-replaceᵢ _updateᵢ _Tᵢ] …))))
         
         #:to
         T
@@ -181,7 +409,7 @@ way up, so that a simple identity function can be applied in these cases.
         #:using
         (update v acc)]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(~or Null (List))
 
         #:to
@@ -190,7 +418,7 @@ way up, so that a simple identity function can be applied in these cases.
         #:using
         (values v acc)]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(Pairof X Y)
 
         #:to
@@ -202,10 +430,10 @@ way up, so that a simple identity function can be applied in these cases.
           (values (cons result-x result-y) acc-y))
 
         #:with-defintitions
-        (define-fold fx tx X type-to-replaceᵢ …)
-        (define-fold fy ty Y type-to-replaceᵢ …)]]
+        (define-fold fx tx X _type-to-replaceᵢ …)
+        (define-fold fy ty Y _type-to-replaceᵢ …)]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(Listof X)
 
         #:to
@@ -215,9 +443,9 @@ way up, so that a simple identity function can be applied in these cases.
         (foldl-map (fe . _args) acc v)
 
         #:with-defintitions
-        (define-fold fe te X type-to-replaceᵢ …)]]
+        (define-fold fe te X _type-to-replaceᵢ …)]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(Vectorof X)
 
         #:to
@@ -229,9 +457,9 @@ way up, so that a simple identity function can be applied in these cases.
           (foldl-map (fe . _args) acc (vector->list v))))
 
         #:with-defintitions
-        (define-fold fe te X type-to-replaceᵢ …)]]
+        (define-fold fe te X _type-to-replaceᵢ …)]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(List X Y …)
 
         #:to
@@ -243,10 +471,10 @@ way up, so that a simple identity function can be applied in these cases.
           (values (cons result-x result-y*) acc-y*))
 
         #:with-defintitions
-        (define-fold fx tx X type-to-replaceᵢ …)
-        (define-fold fy* ty* (List Y …) type-to-replaceᵢ …)]]
+        (define-fold fx tx X _type-to-replaceᵢ …)
+        (define-fold fy* ty* (List Y …) _type-to-replaceᵢ …)]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(U _Xⱼ …)
 
         #:to
@@ -254,14 +482,14 @@ way up, so that a simple identity function can be applied in these cases.
 
         #:using
         (dispatch-union v
-                        ([type-to-replaceᵢ Aᵢ predicateᵢ] …)
+                        ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
                         [_Xⱼ ((_fxⱼ . _args) v acc)] …)
 
         #:with-defintitions
-        (define-fold _fxⱼ _txⱼ _Xⱼ type-to-replaceᵢ …)
+        (define-fold _fxⱼ _txⱼ _Xⱼ _type-to-replaceᵢ …)
         …]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
 
         #:to
@@ -275,10 +503,10 @@ way up, so that a simple identity function can be applied in these cases.
                   acc))
 
         #:with-defintitions
-        (define-fold _fxⱼ _txⱼ _Xⱼ type-to-replaceᵢ …)
+        (define-fold _fxⱼ _txⱼ _Xⱼ _type-to-replaceᵢ …)
         …]]
 
-@chunk[<type-cases>
+@chunk[<old-type-cases>
        [else-T
 
         #:to
@@ -319,11 +547,11 @@ where @racket[foldl-map] is defined as:
                …)
             #'(define/with-syntax (the-type the-code the-defs (… …))
                 (sp #'whole-type
-                  #:literals (lit …)
-                  [pat opts …
-                   (subtemplate
-                    (transform-type transform-code transform-defs …))]
-                  …))]))]
+                    #:literals (lit …)
+                    [pat opts …
+                     (subtemplate
+                      (transform-type transform-code transform-defs …))]
+                    …))]))]
 
 
 @section{Putting it all together}
@@ -341,12 +569,17 @@ where @racket[foldl-map] is defined as:
                             (subtract-in syntax/parse "subtemplate.rkt")
                             syntax/parse/experimental/template
                             type-expander/expander
-                            "free-identifier-tree-equal.rkt")
+                            "free-identifier-tree-equal.rkt"
+                            racket/dict
+                            racket/pretty)
                 (for-meta 2 racket/base)
                 (for-meta 2 phc-toolkit/untyped)
-                (for-meta 2 syntax/parse))
+                (for-meta 2 syntax/parse)
+                racket/pretty)
 
-       (provide define-fold)
+       (provide define-fold
+                replace-in-instance
+                replace-in-type)
        (begin-for-syntax <type-cases-macro>)
        <foldl-map>
        <define-fold>]

@@ -57,19 +57,20 @@
 (begin-for-syntax
   (define/contract (wrap-with-parameterize lctx new-whole-form rest)
     (-> identifier? syntax? syntax? syntax?)
-    (patch-arrows
-     (quasisyntax/top-loc lctx
-       ;; HERE insert a hash table, to cache the uses of derived pvars.
-       ;; Lifting the define-temp-ids is not likely to work, as they
-       ;; need to define syntax pattern variables so that other macros
-       ;; can recognize them. Instead, we only lift the values, but still
-       ;; do the bindings around the subtemplate.
-       (let ([the-pvar-values (cons (make-hash) pvar-values-id)])
-         (syntax-parameterize ([maybe-syntax-pattern-variable-ids
-                                #,(new-scope rest lctx)]
-                               [pvar-values-id (make-rename-transformer
-                                                #'the-pvar-values)])
-           #,new-whole-form))))))
+    (quasisyntax/top-loc lctx
+      (let ()
+        #,(patch-arrows
+           ;; HERE insert a hash table, to cache the uses of derived pvars.
+           ;; Lifting the define-temp-ids is not likely to work, as they
+           ;; need to define syntax pattern variables so that other macros
+           ;; can recognize them. Instead, we only lift the values, but still
+           ;; do the bindings around the subtemplate.
+           #`(let ([the-pvar-values (cons (make-hash) pvar-values-id)])
+               (syntax-parameterize ([maybe-syntax-pattern-variable-ids
+                                      #,(new-scope rest lctx)]
+                                     [pvar-values-id (make-rename-transformer
+                                                      #'the-pvar-values)])
+                 #,new-whole-form)))))))
 
 (begin-for-syntax
   (define/contract (simple-wrap-with-parameterize new-form-id)

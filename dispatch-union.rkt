@@ -23,7 +23,7 @@
   (define-syntax-class to-replace
     (pattern [t result]
              #:with (_ predicate)
-             (findf (λ (r) (free-identifier-tree=? #'t (stx-car r)))
+             (findf (λ (r) (free-id-tree=? #'t (stx-car r)))
                     (syntax->list
                      #'([type-to-replaceᵢ predicateᵢ] …)))
              #:with clause #`[(predicate v) result]))

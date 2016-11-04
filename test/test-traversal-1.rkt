@@ -1,4 +1,4 @@
-#lang typed/racket
+#lang type-expander
 
 (require "../traversal.hl.rkt"
          "ck.rkt")
