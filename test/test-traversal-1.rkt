@@ -17,6 +17,12 @@
 (define-fold f₁₀ t₁₀ (List String Foo (Listof String)) (Listof String))
 (define-fold f₁₁ t₁₁ (List (Listof String) (Listof Number)) (Listof String))
 (define-fold f₁₂ t₁₂ (List (Listof String) (Listof String)) (Listof String))
+(define-fold f₁₃ t₁₃
+  (List Null
+        (Pairof (List (List Null))
+                (List (List Null)))
+        Null)
+  String)
 
 (define (string->symbol+acc [x : String] [acc : Integer])
   (values (string->symbol x) (add1 acc)))

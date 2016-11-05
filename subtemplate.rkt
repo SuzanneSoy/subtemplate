@@ -4,6 +4,7 @@
          racket/stxparam
          syntax/parse
          syntax/parse/experimental/template
+         syntax/parse/experimental/private/substitute
          syntax/id-table
          racket/syntax
          (for-syntax "patch-arrows.rkt"
@@ -22,6 +23,7 @@
 (provide (rename-out [new-syntax-parse syntax-parse]
                      [new-syntax-parser syntax-parser]
                      [new-syntax-case syntax-case])
+         define-unhygienic-template-metafunction
          subtemplate
          quasisubtemplate)
 
@@ -315,3 +317,35 @@
             (define/with-syntax bound-ddd cached)
             (define-syntax #,(format-id #'bound "  is-derived-~a  " #'bound)
               (derived)))))
+
+
+(require syntax/parse/experimental/private/substitute)
+;; Not very clean, but syntax/parse/experimental/template should export it :-(
+(define (stolen-current-template-metafunction-introducer)
+  ((eval #'current-template-metafunction-introducer
+         (module->namespace 'syntax/parse/experimental/private/substitute))))
+
+;; Note: define-unhygienic-template-metafunction probably only works correctly
+;; when the metafunction is defined in the same file as it is used. The macro
+;; which is built using that or other metafunctions can be used anywhere,
+;; though. This is because we use a hack to guess what the old-mark from
+;; syntax/parse/experimental/private/substitute is.
+(define-syntax (define-unhygienic-template-metafunction xxx)
+  (syntax-case xxx ()
+    [(mee (name stx) . code)
+     (datum->syntax
+      #'mee
+      `(define-template-metafunction (,#'name ,#'tmp-stx)
+         (syntax-case ,#'tmp-stx ()
+           [(self . _)
+            (let* ([zero (datum->syntax #f 'zero)]
+                   [normal ((,#'stolen-current-template-metafunction-introducer) (quote-syntax here))
+                           #;(syntax-local-introduce
+                              (syntax-local-get-shadower
+                               (datum->syntax #f 'shadower)))]
+                   [+self (make-syntax-delta-introducer normal zero)]
+                   [+normal (make-syntax-delta-introducer normal zero)]
+                   [mark (make-syntax-delta-introducer (+normal #'self 'flip)
+                                                       zero)]
+                   [,#'stx (syntax-local-introduce (mark ,#'tmp-stx 'flip))])
+              (mark (syntax-local-introduce (let () . ,#'code))))])))]))

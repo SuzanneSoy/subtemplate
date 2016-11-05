@@ -146,17 +146,18 @@ not expressed syntactically using the @racket[Foo] identifier.
 @;@subsection{…}
 
 
-* free-id-tree=?
-* cache of already-seen types
-* recursively go down the tree. If there are no replacements, return #f all the
-way up, so that a simple identity function can be applied in these cases.
+@; TODO: recursively go down the tree. If there are no replacements, return #f
+@; all the way up, so that a simple identity function can be applied in these
+@; cases.
 
 
 @CHUNK[<define-fold>
-       (define-for-syntax (replace-in-type stx)
-         (syntax-case stx ()
-           [(_whole-type [_type-to-replaceᵢ _Tᵢ] …)
-            #`(#,(fold-type #'(_whole-type _type-to-replaceᵢ …)) _Tᵢ …)]))]
+       (begin-for-syntax
+         (define-unhygienic-template-metafunction (replace-in-type stx)
+           (syntax-case stx ()
+             [(_ _whole-type [_type-to-replaceᵢ _Tᵢ] …)
+              #`(#,(syntax-local-introduce
+                    (fold-type #'(_whole-type _type-to-replaceᵢ …))) _Tᵢ …)])))]
 
 @CHUNK[<define-fold>
        (define-for-syntax fold-type
@@ -171,12 +172,10 @@ way up, so that a simple identity function can be applied in these cases.
                                           (map syntax-e
                                                (syntax->list
                                                 #'([_type-to-replaceᵢ . _Tᵢ] …)))))
-                    (printf "Start ~a ~a =>\n" (syntax->datum τ-) #'_whole-type)
-                    ((λ (x) (printf "~a ~a =>\n" (syntax->datum τ-) #'_whole-type) (pretty-write (syntax->datum x)) x)
-                     #`(∀ (_Tᵢ …)
-                          #,(syntax-parse #'_whole-type
-                              #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-                              <type-cases>))))]))]
+                    #`(∀ (_Tᵢ …)
+                         #,(syntax-parse #'_whole-type
+                             #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                             <type-cases>)))]))]
 
 @CHUNK[<cached>
        (begin-for-syntax
@@ -197,7 +196,6 @@ way up, so that a simple identity function can be applied in these cases.
          (syntax-case stx ()
            [(_whole-type
              [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
-            ;+ cache
             #`(#,(fold-f #'(_whole-type _type-to-replaceᵢ …))
                {?@ _predicateᵢ _updateᵢ} …)]))]
 
@@ -215,22 +213,21 @@ way up, so that a simple identity function can be applied in these cases.
                      (get-f-cache)
                      (get-f-defs)
                      #'(_whole-type _type-to-replaceᵢ …)]
-                    ((λ (x) (printf "~a ~a =>\n" (syntax->datum f-) #'_whole-type) (pretty-write (syntax->datum x)) x)
-                     #`[(λ ({?@ _predicateᵢ _updateᵢ} …)
-                          (λ (v acc)
-                            #,(syntax-parse #'_whole-type
-                                #:literals (Null Pairof Listof List Vectorof Vector U tagged)
-                                <f-cases>)))
-                        (∀ (_Aᵢ … _Bᵢ … Acc)
-                           (→ (?@ (→ Any Boolean : _Aᵢ)
-                                  (→ _Aᵢ Acc (Values _Bᵢ Acc)))
-                              …
-                              (→ #,(replace-in-type #'(_whole-type
-                                                       [_type-to-replaceᵢ _Aᵢ] …))
-                                 Acc
-                                 (Values #,(replace-in-type #'(_whole-type
-                                                               [_type-to-replaceᵢ _Bᵢ] …))
-                                         Acc))))]))]))]
+                    #`[(λ ({?@ _predicateᵢ _updateᵢ} …)
+                         (λ (v acc)
+                           #,(syntax-parse #'_whole-type
+                               #:literals (Null Pairof Listof List Vectorof Vector U tagged)
+                               <f-cases>)))
+                       (∀ (_Aᵢ … _Bᵢ … Acc)
+                          (→ (?@ (→ Any Boolean : _Aᵢ)
+                                 (→ _Aᵢ Acc (Values _Bᵢ Acc)))
+                             …
+                             (→ (replace-in-type _whole-type
+                                                 [_type-to-replaceᵢ _Aᵢ] …)
+                                Acc
+                                (Values (replace-in-type _whole-type
+                                                         [_type-to-replaceᵢ _Bᵢ] …)
+                                        Acc))))])]))]
 
 @chunk[<f-cases>
        [t
@@ -255,8 +252,8 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(Pairof X Y)
-        #`(Pairof #,(replace-in-type #'(X . rec-args))
-                  #,(replace-in-type #'(Y . rec-args)))]]
+        #`(Pairof (replace-in-type X . rec-args)
+                  (replace-in-type Y . rec-args))]]
 
 @CHUNK[<f-cases>
        [(Pairof X Y)
@@ -268,7 +265,7 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(Listof X)
-        #`(Listof #,(replace-in-type #'(X . rec-args)))]]
+        #`(Listof (replace-in-type X . rec-args))]]
 
 @CHUNK[<f-cases>
        [(Listof X)
@@ -277,8 +274,7 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(Vectorof X)
-        ;; TODO: turn replace-in-type & co into rec-replace via metafunctions
-        #`(Vectorof #,(replace-in-type #'(X . rec-args)))]]
+        #`(Vectorof (replace-in-type X . rec-args))]]
 
 @CHUNK[<ftype-cases>
        [(Vectorof X)
@@ -291,8 +287,8 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(List X Y …)
-        #`(Pairof #,(replace-in-type #'(X . rec-args))
-                  #,(replace-in-type #'((List Y …) . rec-args)))]]
+        #`(Pairof (replace-in-type X . rec-args)
+                  (replace-in-type (List Y …) . rec-args))]]
 
 @CHUNK[<f-cases>
        [(List X Y …)
@@ -306,8 +302,7 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(U _Xⱼ …)
-        #`(U #,@(stx-map (λ (_x) (replace-in-type #`(#,_x . rec-args)))
-                         #'(_Xⱼ …)))]]
+        #`(U (replace-in-type _Xⱼ . rec-args) …)]]
 
 @CHUNK[<f-cases>
        [(U _Xⱼ …)
@@ -320,10 +315,7 @@ way up, so that a simple identity function can be applied in these cases.
 
 @CHUNK[<type-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
-        #`(tagged _name #,@(stx-map (λ (_field _x)
-                                      #`[#,_field : #,(replace-in-type #`(#,_x . rec-args))])
-                                    #'(_fieldⱼ …)
-                                    #'(_Xⱼ …)))]]
+        #`(tagged _name [_fieldⱼ : (replace-in-type _Xⱼ . rec-args)] …)]]
 
 @CHUNK[<f-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
@@ -344,10 +336,6 @@ way up, so that a simple identity function can be applied in these cases.
 @chunk[<f-cases>
        [else-T
         #'(values v acc)]]
-
-
-
-------
 
 
 
@@ -392,13 +380,12 @@ where @racket[foldl-map] is defined as:
                 phc-adt
                 "dispatch-union.rkt"
                 (for-syntax  "subtemplate-override.rkt"
-                             (subtract-in racket/base
-                                          "subtemplate-override.rkt")
-                             phc-toolkit/untyped
-                             racket/syntax
-                             (subtract-in syntax/parse
+                             (subtract-in (combine-in racket/base
+                                                      syntax/parse)
                                           "subtemplate-override.rkt")
                              syntax/parse/experimental/template
+                             phc-toolkit/untyped
+                             racket/syntax
                              type-expander/expander
                              "free-identifier-tree-equal.rkt"
                              racket/dict
