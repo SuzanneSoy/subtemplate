@@ -133,15 +133,13 @@ not expressed syntactically using the @racket[Foo] identifier.
                         [get-τ-cache (make-mutable-free-id-tree-table)]
                         [get-f-defs (box '())]
                         [get-τ-defs (box '())])
-           (displayln (list 'context= (syntax-local-context)))
            (define/with-syntax thunk-result (thunk))
            (with-syntax ([([f-id f-body f-type] …) (unbox (get-f-defs))]
                          [([τ-id . τ-body] …) (unbox (get-τ-defs))])
-             ((λ (x) (displayln x) x)
-              #`(begin (define-type τ-id τ-body) …
-                       (: f-id f-type) …
-                       (define f-id f-body) …
-                       thunk-result)))))]
+             #`(begin (define-type τ-id τ-body) …
+                      (: f-id f-type) …
+                      (define f-id f-body) …
+                      thunk-result))))]
 
 @;@subsection{…}
 
@@ -307,11 +305,10 @@ not expressed syntactically using the @racket[Foo] identifier.
 
 @CHUNK[<f-cases>
        [(U _Xⱼ …)
-        ((λ (x) (displayln x) x)
-         #'(dispatch-union v
-                           ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
-                           [_Xⱼ ((replace-in-instance _Xⱼ . rec-args) v acc)]
-                           …))]]
+        #'(dispatch-union v
+                          ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
+                          [_Xⱼ ((replace-in-instance _Xⱼ . rec-args) v acc)]
+                          …)]]
 
 @CHUNK[<type-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
@@ -386,12 +383,10 @@ where @racket[foldl-map] is defined as:
                              racket/syntax
                              type-expander/expander
                              "free-identifier-tree-equal.rkt"
-                             racket/dict
-                             racket/pretty)
+                             racket/dict)
                 (for-meta 2 racket/base)
                 (for-meta 2 phc-toolkit/untyped)
-                (for-meta 2 syntax/parse)
-                racket/pretty)
+                (for-meta 2 syntax/parse))
 
        (provide define-fold
                 (for-syntax replace-in-instance)
