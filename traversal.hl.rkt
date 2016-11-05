@@ -192,12 +192,13 @@ not expressed syntactically using the @racket[Foo] identifier.
                      base))))))]
 
 @CHUNK[<define-fold>
-       (define-for-syntax (replace-in-instance stx)
-         (syntax-case stx ()
-           [(_whole-type
-             [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
-            #`(#,(fold-f #'(_whole-type _type-to-replaceᵢ …))
-               {?@ _predicateᵢ _updateᵢ} …)]))]
+       (begin-for-syntax
+         (define-unhygienic-template-metafunction (replace-in-instance stx)
+           (syntax-case stx ()
+             [(_ _whole-type [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
+              #`(#,(syntax-local-introduce
+                    (fold-f #'(_whole-type _type-to-replaceᵢ …)))
+                 {?@ _predicateᵢ _updateᵢ} …)])))]
 
 @CHUNK[<define-fold>
        (define-for-syntax fold-f
@@ -252,80 +253,77 @@ not expressed syntactically using the @racket[Foo] identifier.
 
 @CHUNK[<type-cases>
        [(Pairof X Y)
-        #`(Pairof (replace-in-type X . rec-args)
+        #'(Pairof (replace-in-type X . rec-args)
                   (replace-in-type Y . rec-args))]]
 
 @CHUNK[<f-cases>
        [(Pairof X Y)
-        #`(let*-values ([(result-x acc-x)
-                         (#,(replace-in-instance #'(X . rec-args)) (car v) acc)]
+        #'(let*-values ([(result-x acc-x)
+                         ((replace-in-instance X . rec-args) (car v) acc)]
                         [(result-y acc-y)
-                         (#,(replace-in-instance #'(Y . rec-args)) (cdr v) acc-x)])
+                         ((replace-in-instance Y . rec-args) (cdr v) acc-x)])
             (values (cons result-x result-y) acc-y))]]
 
 @CHUNK[<type-cases>
        [(Listof X)
-        #`(Listof (replace-in-type X . rec-args))]]
+        #'(Listof (replace-in-type X . rec-args))]]
 
 @CHUNK[<f-cases>
        [(Listof X)
-        #`(foldl-map #,(replace-in-instance #'(X . rec-args))
+        #'(foldl-map (replace-in-instance X . rec-args)
                      acc v)]]
 
 @CHUNK[<type-cases>
        [(Vectorof X)
-        #`(Vectorof (replace-in-type X . rec-args))]]
+        #'(Vectorof (replace-in-type X . rec-args))]]
 
 @CHUNK[<ftype-cases>
        [(Vectorof X)
-        #`(vector->immutable-vector
+        #'(vector->immutable-vector
            (list->vector
-            (foldl-map #,(replace-in-instance #'(X . rec-args))
+            (foldl-map (replace-in-instance X . rec-args)
                        acc
                        (vector->list v))))]]
 
 
 @CHUNK[<type-cases>
        [(List X Y …)
-        #`(Pairof (replace-in-type X . rec-args)
+        #'(Pairof (replace-in-type X . rec-args)
                   (replace-in-type (List Y …) . rec-args))]]
 
 @CHUNK[<f-cases>
        [(List X Y …)
-        #`(let*-values ([(result-x acc-x) (#,(replace-in-instance #'(X . rec-args))
+        #'(let*-values ([(result-x acc-x) ((replace-in-instance X . rec-args)
                                            (car v)
                                            acc)]
-                        [(result-y* acc-y*) (#,(replace-in-instance #'((List Y …) . rec-args))
+                        [(result-y* acc-y*) ((replace-in-instance (List Y …) . rec-args)
                                              (cdr v)
                                              acc-x)])
             (values (cons result-x result-y*) acc-y*))]]
 
 @CHUNK[<type-cases>
        [(U _Xⱼ …)
-        #`(U (replace-in-type _Xⱼ . rec-args) …)]]
+        #'(U (replace-in-type _Xⱼ . rec-args) …)]]
 
 @CHUNK[<f-cases>
        [(U _Xⱼ …)
         ((λ (x) (displayln x) x)
-         #`(dispatch-union v
+         #'(dispatch-union v
                            ([_type-to-replaceᵢ Aᵢ _predicateᵢ] …)
-                           #,@(stx-map (λ (_x)
-                                         #`[#,_x (#,(replace-in-instance #`(#,_x . rec-args)) v acc)])
-                                       #'(_Xⱼ …))))]]
+                           [_Xⱼ ((replace-in-instance _Xⱼ . rec-args) v acc)]
+                           …))]]
 
 @CHUNK[<type-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
-        #`(tagged _name [_fieldⱼ : (replace-in-type _Xⱼ . rec-args)] …)]]
+        #'(tagged _name [_fieldⱼ : (replace-in-type _Xⱼ . rec-args)] …)]]
 
 @CHUNK[<f-cases>
        [(tagged _name [_fieldⱼ (~optional :colon) _Xⱼ] …)
-        #`(let*-values (#,@(stx-map (λ ( _result _field _x)
-                                      #`[(#,_result acc)
-                                         (#,(replace-in-instance #`(#,_x . rec-args)) (uniform-get v #,_field)
-                                                                                      acc)])
-                                    #'(_resultⱼ …)
-                                    #'(_fieldⱼ …)
-                                    #'(_Xⱼ …)))
+        #'(let*-values
+              ([(_resultⱼ acc)
+                ((replace-in-instance _Xⱼ . rec-args) (uniform-get v _fieldⱼ)
+                                                      acc)]
+               …)
             (values (tagged _name #:instance [_fieldⱼ _resultⱼ] …)
                     acc))]]
 
