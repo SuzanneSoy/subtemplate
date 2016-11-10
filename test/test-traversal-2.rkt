@@ -1,6 +1,6 @@
 #lang typed/racket
 
-(require "../traversal.hl.rkt"
+(require "traversal-util.rkt" ;"../traversal.hl.rkt"
          type-expander
          phc-adt
          "ck.rkt"

@@ -389,7 +389,7 @@ where @racket[foldl-map] is defined as:
                 (for-meta 2 phc-toolkit/untyped)
                 (for-meta 2 syntax/parse))
 
-       (provide define-fold
+       (provide with-folds
                 (for-syntax replace-in-instance)
                 (for-syntax replace-in-type))
        <foldl-map>
