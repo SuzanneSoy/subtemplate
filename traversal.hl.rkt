@@ -149,16 +149,22 @@ not expressed syntactically using the @racket[Foo] identifier.
 @; cases.
 
 
-@CHUNK[<define-fold>
-       (begin-for-syntax
-         (define-template-metafunction (replace-in-type stx)
-           (syntax-case stx ()
-             [(_ _whole-type [_type-to-replaceᵢ _Tᵢ] …)
-              #`(#,(syntax-local-template-metafunction-introduce
-                    (fold-type #'(_whole-type _type-to-replaceᵢ …))) _Tᵢ …)])))]
+@CHUNK[<api>
+       (define-template-metafunction (replace-in-type stx)
+         (syntax-case stx ()
+           [(_ _whole-type [_type-to-replaceᵢ _Tᵢ] …)
+            #`(#,(syntax-local-template-metafunction-introduce
+                  (fold-τ #'(_whole-type _type-to-replaceᵢ …))) _Tᵢ …)]))]
 
-@CHUNK[<define-fold>
-       (define-for-syntax fold-type
+@CHUNK[<api>
+       (define-template-metafunction (∀-replace-in-type stx)
+         (syntax-case stx ()
+           [(_ _whole-type _type-to-replaceᵢ …)
+            (syntax-local-template-metafunction-introduce
+             (fold-τ #'(_whole-type _type-to-replaceᵢ …)))]))]
+
+@CHUNK[<fold-τ>
+       (define fold-τ
          (syntax-parser
            [(_whole-type:type _type-to-replaceᵢ:type …)
             #:with rec-args #'([_type-to-replaceᵢ _Tᵢ] …)
@@ -180,7 +186,7 @@ not expressed syntactically using the @racket[Foo] identifier.
          (define-syntax-rule (cached [base cache defs key] . body)
            (begin
              (unless (and cache defs)
-               (error "fold-type and fold-f must be called within with-folds"))
+               (error "fold-τ and fold-f must be called within with-folds"))
              (if (dict-has-key? cache key)
                  (dict-ref cache key)
                  (let ([base #`#,(gensym 'base)])
@@ -189,17 +195,23 @@ not expressed syntactically using the @racket[Foo] identifier.
                      (set-box! defs `([,base . ,result] . ,(unbox defs)))
                      base))))))]
 
-@CHUNK[<define-fold>
-       (begin-for-syntax
-         (define-template-metafunction (replace-in-instance stx)
-           (syntax-case stx ()
-             [(_ _whole-type [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
-              #`(#,(syntax-local-template-metafunction-introduce
-                    (fold-f #'(_whole-type _type-to-replaceᵢ …)))
-                 {?@ _predicateᵢ _updateᵢ} …)])))]
+@CHUNK[<api>
+       (define-template-metafunction (replace-in-instance stx)
+         (syntax-case stx ()
+           [(_ _whole-type [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
+            #`(#,(syntax-local-template-metafunction-introduce
+                  (fold-f #'(_whole-type _type-to-replaceᵢ …)))
+               {?@ _predicateᵢ _updateᵢ} …)]))]
+         
+@CHUNK[<api>
+       (define-template-metafunction (λ-replace-in-instance stx)
+         (syntax-case stx ()
+           [(_ _whole-type _type-to-replaceᵢ …)
+            (syntax-local-introduce
+             (fold-f #'(_whole-type _type-to-replaceᵢ …)))]))]
 
-@CHUNK[<define-fold>
-       (define-for-syntax fold-f
+@CHUNK[<fold-f>
+       (define fold-f
          (syntax-parser
            [(_whole-type:type _type-to-replaceᵢ:type …)
             #:with rec-args #'([_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
@@ -333,23 +345,6 @@ not expressed syntactically using the @racket[Foo] identifier.
         #'(values v acc)]]
 
 
-
-@CHUNK[<define-fold>
-       (define-syntax define-fold
-         (syntax-parser
-           [(_ _function-name:id
-               _type-name:id
-               whole-type:type
-               _type-to-replaceᵢ:type …)
-            (with-folds
-             (λ ()
-               #`(begin
-                   (define-type _type-name
-                     #,(fold-type #'(whole-type _type-to-replaceᵢ …)))
-                   (define _function-name
-                     #,(fold-f #'(whole-type _type-to-replaceᵢ …))))))]))]
-
-
 where @racket[foldl-map] is defined as:
 
 @chunk[<foldl-map>
@@ -378,7 +373,6 @@ where @racket[foldl-map] is defined as:
                              (subtract-in (combine-in racket/base
                                                       syntax/parse)
                                           "subtemplate-override.rkt")
-                             ;syntax/parse/experimental/template
                              backport-template-pr1514/experimental/template
                              phc-toolkit/untyped
                              racket/syntax
@@ -389,10 +383,15 @@ where @racket[foldl-map] is defined as:
                 (for-meta 2 phc-toolkit/untyped)
                 (for-meta 2 syntax/parse))
 
-       (provide with-folds
-                (for-syntax replace-in-instance)
-                (for-syntax replace-in-type))
+       (provide (for-syntax with-folds
+                            replace-in-type
+                            ∀-replace-in-type
+                            replace-in-instance
+                            λ-replace-in-instance))
        <foldl-map>
        <with-folds>
        <cached>
-       <define-fold>]
+       (begin-for-syntax
+         <api>
+         <fold-τ>
+         <fold-f>)]

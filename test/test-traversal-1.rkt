@@ -1,6 +1,6 @@
 #lang type-expander
 
-(require "traversal-util.rkt" ;"../traversal.hl.rkt"
+(require "traversal-util.rkt"
          "ck.rkt")
 
 (define-type Foo (Listof String))
