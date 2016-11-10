@@ -151,10 +151,10 @@ not expressed syntactically using the @racket[Foo] identifier.
 
 @CHUNK[<define-fold>
        (begin-for-syntax
-         (define-unhygienic-template-metafunction (replace-in-type stx)
+         (define-template-metafunction (replace-in-type stx)
            (syntax-case stx ()
              [(_ _whole-type [_type-to-replaceᵢ _Tᵢ] …)
-              #`(#,(syntax-local-introduce
+              #`(#,(syntax-local-template-metafunction-introduce
                     (fold-type #'(_whole-type _type-to-replaceᵢ …))) _Tᵢ …)])))]
 
 @CHUNK[<define-fold>
@@ -191,10 +191,10 @@ not expressed syntactically using the @racket[Foo] identifier.
 
 @CHUNK[<define-fold>
        (begin-for-syntax
-         (define-unhygienic-template-metafunction (replace-in-instance stx)
+         (define-template-metafunction (replace-in-instance stx)
            (syntax-case stx ()
              [(_ _whole-type [_type-to-replaceᵢ _predicateᵢ _updateᵢ] …)
-              #`(#,(syntax-local-introduce
+              #`(#,(syntax-local-template-metafunction-introduce
                     (fold-f #'(_whole-type _type-to-replaceᵢ …)))
                  {?@ _predicateᵢ _updateᵢ} …)])))]
 
@@ -378,7 +378,8 @@ where @racket[foldl-map] is defined as:
                              (subtract-in (combine-in racket/base
                                                       syntax/parse)
                                           "subtemplate-override.rkt")
-                             syntax/parse/experimental/template
+                             ;syntax/parse/experimental/template
+                             backport-template-pr1514/experimental/template
                              phc-toolkit/untyped
                              racket/syntax
                              type-expander/expander

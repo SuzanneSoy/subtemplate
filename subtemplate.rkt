@@ -3,8 +3,9 @@
          phc-toolkit/untyped
          racket/stxparam
          syntax/parse
-         syntax/parse/experimental/template
-         syntax/parse/experimental/private/substitute
+         backport-template-pr1514/experimental/template
+         ;syntax/parse/experimental/template
+         ;syntax/parse/experimental/private/substitute
          syntax/id-table
          racket/syntax
          (for-syntax "patch-arrows.rkt"
@@ -23,7 +24,7 @@
 (provide (rename-out [new-syntax-parse syntax-parse]
                      [new-syntax-parser syntax-parser]
                      [new-syntax-case syntax-case])
-         define-unhygienic-template-metafunction
+         ;define-unhygienic-template-metafunction
          subtemplate
          quasisubtemplate)
 
@@ -319,6 +320,7 @@
               (derived)))))
 
 
+#|
 (require syntax/parse/experimental/private/substitute)
 ;; Not very clean, but syntax/parse/experimental/template should export it :-(
 (define (stolen-current-template-metafunction-introducer)
@@ -349,3 +351,4 @@
                                                        zero)]
                    [,#'stx (syntax-local-introduce (mark ,#'tmp-stx 'flip))])
               (mark (syntax-local-introduce (let () . ,#'code))))])))]))
+|#

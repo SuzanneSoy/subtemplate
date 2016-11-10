@@ -9,7 +9,8 @@
                "scribble-enhanced"
                "typed-racket-lib"
                "srfi-lite-lib"
-               "delay-pure"))
+               "delay-pure"
+               "backport-template-pr1514"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
