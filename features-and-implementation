@@ -1,0 +1,40 @@
+* gc
+* automatic generation of mappings Old → New
+
+
+* safe and automatic generation of 1↔1, 1↔many and many↔1 backward references
+
+** global directives which apply to all nodes types: insert a pointer to the root, insert a backward pointer for every link (i.e. .back brings back to the previous node)
+
+** the backward references specify the link that should be reversed, as well as a path from there. That way, methods can have a backward pointer to the "call" instructions referencing them, but the backward pointer should not
+   directly point to the "call" instruction, but instead to the instruction's containing method, accessed with ".method". Maybe some syntactic sugar can allow this to be specified as #:backward-reference method.instructions.*[call]
+
+* try to think about PHOAS
+
+** Strong HOAS article: https://www.schoolofhaskell.com/user/edwardk/phoas
+
+
+
+* mapping-placeholder          = Placeholder type, one for each mapping
+* mapping-incomplete-result    = (~> mapping) types within the mapping's result type are replaced by (U mapping-placeholder mapping-incomplete-result), and node types are replaced by (U xxx old-node)
+* mapping-with-promises-result = node types within the mapping's result type are replaced by node-promise
+
+* node-promise                 = (Promise node-with-promises)
+* node-with-promises           = node types within the node's fields are replaced by node-promise
+
+
+
+
+
+
+
+
+
+
+
+To discuss:
+* maybe add a "self" variable, so that a mapping can give to others a placeholder for the node it is currently generating? That wouldn't play well with mappings which generate multiple nodes and/or part of a node.
+** self is a opaque "SELF" token, not an actual placeholder
+
+Minor TODOs:
+* If we can guarantee that any two nodes within the same graph are (not (equal? …)), then we can implement a fast negative equality test, in addition to the existing fast equality test (which compares the "raw" field of nodes).

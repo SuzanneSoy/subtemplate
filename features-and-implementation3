@@ -1,0 +1,99 @@
+* Invariants
+  * Scope of the invariants:
+    * Input contracts, types and structural properties
+    * Output contracts, types and structural properties
+    * Transformation invariants (relate the input and output graphs)
+  * Time of verification:
+    * Run-time
+      Should be easy enough to implement: Add a define-graph-invariant form, recognize these options, and check
+      them at run-time. Implemented as some sorts of contracts.
+    * Compile-time
+      * Node types
+      * Statically-enforced structural invariants at the level of node types
+        (e.g. disallow cycles in the types, to ensure there are no cycles in the instance)
+      * Macros can be used to generate code which is known to be correct
+        e.g. paths 
+        * Concern: static "by construction" guarantees may interfere with each other, if they fill in some nodes,
+          e.g. a "no cycles starting from this node" constraint would not work as expected if a "backwards link"
+          is filled in afterwards. We probably need to hardcode a set of constraints which know about eachother
+          and about the potential interactions.
+      * Conserve well-scopedness within a transition: pass in nodes flagged with a ∀ type, and check
+        that the output contains that flag. Potentially out-of-scope fields in the input do not have the flag.
+      * PHOAS
+  * Specification
+    * Invariants specified in the graph type
+    * Transformation invariants specified on the graph creation code
+    * Checks (run-time or the various compile-time mechanisms) are specified in the graph creation code
+      The graph creation code must enforce all invariants within the type
+      That way, it is guaranteed that any instance of the graph type satisfies its invariants, either by
+      construction, or as a guard at the end of the construction.
+
+; The body should produce a function of type (→ (Listof Nodeᵢ) … Boolean)
+; The body should also return an indication about which invariants it ensures. Maybe use {~seq #:ensures (invariant-name inariant-arg …)} …
+  however this does not allow the body to perform some minimal amount of rewriting on the "ensures" options.
+(define-syntax/parse (define-graph-contract (name g-descriptor arg …) . body)
+  #'(define-syntax name
+      (graph-contract
+        (λ (g-descriptor arg …) . body))))
+
+;; TODO: find a way to translate this to a type, with subtyping for weaker invariants.
+;; The type only serves to testify that the invariant was statically enforced or dynamically checked at construction, it does not actually encode the property using the type system.
+(struct invariants-wrapper ()) ;; Use a private struct to prevent forging of the invariants aggregated in a case→ (since it is never executed, any non-terminating λ could otherwise be supplied).
+(define-for-syntax invariant-introducer
+  (make-syntax-introducer))
+;; the body should return the syntax for a type, such that less precise invariants are supertypes of that type.
+(define-syntax/parse (define-graph-invariant (name g-descriptor arg …) . body)
+  #'(define-syntax name
+      (graph-invariant
+        (λ (g-descriptor arg …) . body))))
+
+The type of a graph node with the invariants inv₁ … invₙ on the graph must include an extra dummy field with type
+(invariants-wrapper
+  (case (→ inv₁ inv-arg … #t)
+        …
+        (→ invₙ inv-arg … #t)))
+
+The invariant arguments can be symbols, to indicate node types or field names.
+
+Concern: invariants on a graph may not have the same semantics if the graph has more or fewer nodes?
+
+* Automatic generation of mappings
+  * when there is no mapping taking an old node as an input, a mapping is automatically generated.
+    The mapping simply translates the old node to the new node type, and recursively transforms its fields,
+    traversing lists etc.
+  * When there is a mapping with more than one argument, then no mapping is auto-generated for that input node type,
+    and instead calls to the mapping must be explicit (i.e. can't return the old node type).
+  * This means that we have a mechanism before the actual core graph macro, which checks and decides which mappings
+    to auto-generate.
+  * We also have a mechanism for auto-calling transformations on input node types
+  * Possibility to escape this, in order to actually insert a reference to the old graph?
+    * Some notation in the type, to indicate that the output should be an "old" node here
+    * In the rare case where we have an (U (Old nd) nd), in the mapping use some (old v) wrapper
+      indicating that the returned it should merely be unwrapped, not processed.
+
+(define-syntax define-graph-type
+  (syntax-parser
+   [(_ _name [_nodeᵢ [_fieldᵢⱼ :colon _τᵢⱼ] …] …)
+    ;; save the graph type metadata
+    ]))
+
+(define-syntax define-graph-transformer
+  (syntax-parser
+   [(_ _name graph-type)
+    ;; TODO
+    ]))
+
+* Structural node equality
+  * Would be nice to coalesce nodes which are equal? (i.e. hash consing)
+    so that any two nodes which are equal? within the same graph have the same index.
+    I suppose this would be rather costly: O(n log n) comparisons, with each comparison potentially
+    costly, in principle. If we cached results, we could achieve a better run-time in practice, and
+    perhaps a better theoretical complexity if we handled cycles ourselves.
+    * The general algorithm when there are no unordered sets is deterministic finite automaton minimization
+    * The general algorithm when there are unordered sets is nondeterministic finite automaton minimization
+    * We could cache all calls to equal? on two nodes for a limited dynamic scope.
+    * If we have this, then we can, for comparisons within the same graph, quickly return #t or #f based on eq?
+
+* Coloring: the existing graph library for Racket has some coloring algorithms:
+  http://docs.racket-lang.org/graph/index.html#%28def._%28%28lib._graph%2Fmain..rkt%29._coloring%2Fgreedy%29%29
+  Maybe we can build a wrapper for those?
