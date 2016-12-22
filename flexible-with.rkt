@@ -13,10 +13,9 @@
        <→τ>
        <define-replace-in-tree>
        <convert-fields>
-       <τ-with-fields>
+       <τ-tree-with-fields>
        <convert-from-struct>
        <mk>
-       <utils>
        <example>]
 
 @CHUNK[<→τ>
@@ -78,39 +77,38 @@
          ;(displayln (syntax->datum #`#,(f 1)))
          (f 1))]
 
-@CHUNK[<τ-with-fields>
-       (define-for-syntax (τ-tree-with-fields fields all-fields)
+@CHUNK[<τ-tree-with-fields>
+       (define-for-syntax (τ-tree-with-fields fields all-fields2)
          (define/with-syntax (fl …) fields)
-         (define/with-syntax (field …) all-fields)
-         (let-values ([(all-fields depth-above offset i*-above names τ*)
-                       (utils #'(field …))])
-           ;; Like in convert-from-struct
-           (define lookup
-             (make-free-id-table
-              (for/list ([n (in-syntax all-fields)]
-                         [i (in-naturals)])
-                (cons n (+ i offset)))))
-           (define fields+indices
-             (sort (stx-map #λ(cons % (free-id-table-ref lookup %))
-                            #'(fl …))
-                   <
-                   #:key cdr))
+         (define/with-syntax (field …) all-fields2)
+         <utils>
+         ;; Like in convert-from-struct
+         (define lookup
+           (make-free-id-table
+            (for/list ([n (in-syntax all-fields)]
+                       [i (in-naturals)])
+              (cons n (+ i offset)))))
+         (define fields+indices
+           (sort (stx-map #λ(cons % (free-id-table-ref lookup %))
+                          #'(fl …))
+                 <
+                 #:key cdr))
   
-           (define up (* offset 2))
+         (define up (* offset 2))
 
-           ;; Like in convert-fields, but with Pairof
-           (define (f i)
-             ;(displayln (list i '/ up (syntax->datum #`#,fields+indices)))
-             (if (and (pair? fields+indices) (= i (cdar fields+indices)))
-                 (begin0
-                   (caar fields+indices)
-                   (set! fields+indices (cdr fields+indices)))
-                 (if (>= (* i 2) up) ;; DEPTH
-                     ''MISSING
-                     (begin
-                       `(Pairof ,(f (* i 2))
-                                ,(f (add1 (* i 2))))))))
-           (f 1)))]
+         ;; Like in convert-fields, but with Pairof
+         (define (f i)
+           ;(displayln (list i '/ up (syntax->datum #`#,fields+indices)))
+           (if (and (pair? fields+indices) (= i (cdar fields+indices)))
+               (begin0
+                 (caar fields+indices)
+                 (set! fields+indices (cdr fields+indices)))
+               (if (>= (* i 2) up) ;; DEPTH
+                   ''MISSING
+                   (begin
+                     `(Pairof ,(f (* i 2))
+                              ,(f (add1 (* i 2))))))))
+         (f 1))]
 
 @CHUNK[<convert-from-struct>
        (define-for-syntax (convert-from-struct
@@ -141,8 +139,8 @@
        (define-for-syntax (mk stx)
          (syntax-case stx ()
            [(bt-fields-id (field …) [struct struct-field …] …)
-            (let-values ([(all-fields depth-above offset i*-above names τ*)
-                          (utils #'(field …))])
+            (let ()
+              <utils>
               (define total-nb-functions (vector-length names))
               #`(begin
                   (define-type-expander (bt-fields-id stx)
@@ -158,25 +156,16 @@
                           (syntax->list #'([struct-field …] …)))))]))]
 
 @CHUNK[<utils>
-       (define-for-syntax (utils stx)
-         (syntax-case stx ()
-           [(field …)
-            (let* ([all-fields #'(field …)]
-                   [depth-above (ceiling-log2 (length (syntax->list #'(field …))))]
-                   [offset (expt 2 depth-above)]
-                   [i*-above (range 1 (expt 2 depth-above))]
-                   [names (list->vector
-                           (append (map (λ (i) (format-id #'here "-with-~a" i))
-                                        i*-above)
-                                   (stx-map (λ (f) (format-id f "with-~a" f))
-                                            #'(field …))))]
-                   [τ* (map #λ(format-id #'here "τ~a" %) (range (add1 depth-above)))])
-              (values all-fields
-                      depth-above
-                      offset
-                      i*-above
-                      names
-                      τ*))]))]
+       (define all-fields #'(field …))
+       (define depth-above (ceiling-log2 (length (syntax->list #'(field …)))))
+       (define offset (expt 2 depth-above))
+       (define i*-above (range 1 (expt 2 depth-above)))
+       (define names (list->vector
+               (append (map (λ (i) (format-id #'here "-with-~a" i))
+                            i*-above)
+                       (stx-map (λ (f) (format-id f "with-~a" f))
+                                #'(field …)))))
+       (define τ* (map #λ(format-id #'here "τ~a" %) (range (add1 depth-above))))]
 @CHUNK[<example>
        (define-syntax (gs stx)
          (syntax-case stx ()
