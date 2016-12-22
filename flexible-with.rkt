@@ -78,9 +78,9 @@
          (f 1))]
 
 @CHUNK[<τ-tree-with-fields>
-       (define-for-syntax (τ-tree-with-fields fields all-fields2)
-         (define/with-syntax (fl …) fields)
-         (define/with-syntax (field …) all-fields2)
+       (define-for-syntax (τ-tree-with-fields struct-fields fields)
+         (define/with-syntax (struct-field …) struct-fields)
+         (define/with-syntax (field …) fields)
          <utils>
          ;; Like in convert-from-struct
          (define lookup
@@ -90,7 +90,7 @@
               (cons n (+ i offset)))))
          (define fields+indices
            (sort (stx-map #λ(cons % (free-id-table-ref lookup %))
-                          #'(fl …))
+                          #'(struct-field …))
                  <
                  #:key cdr))
   
@@ -160,12 +160,12 @@
        (define depth-above (ceiling-log2 (length (syntax->list #'(field …)))))
        (define offset (expt 2 depth-above))
        (define i*-above (range 1 (expt 2 depth-above)))
+       (define τ* (map #λ(format-id #'here "τ~a" %) (range (add1 depth-above))))
        (define names (list->vector
                (append (map (λ (i) (format-id #'here "-with-~a" i))
                             i*-above)
                        (stx-map (λ (f) (format-id f "with-~a" f))
-                                #'(field …)))))
-       (define τ* (map #λ(format-id #'here "τ~a" %) (range (add1 depth-above))))]
+                                #'(field …)))))]
 @CHUNK[<example>
        (define-syntax (gs stx)
          (syntax-case stx ()
