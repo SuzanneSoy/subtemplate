@@ -14,7 +14,8 @@
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
-                     "typed-racket-doc"))
+                     "typed-racket-doc"
+                     "aful"))
 (define scribblings
   '(("scribblings/phc-graph.scrbl" ()
                                    ("Data Structures"))
