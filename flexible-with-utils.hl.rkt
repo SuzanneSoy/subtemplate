@@ -1,5 +1,19 @@
 #lang aful/unhygienic hyper-literate type-expander/lang
 
+@(require scribble-math)
+
+@title[#:style manual-doc-style]{Flexible functional modification and
+ extension of records (utility functions)}
+
+@(chunks-toc-prefix
+  '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"
+    "phc-graph/flexible-with"))
+
+@defmodule[(lib "phc-graph/flexible-with-utils.hl.rkt")]
+
+@(unless-preexpanding
+  (require (for-label (submod ".."))))
+
 @chunk[<*>
        (require (for-syntax racket/base))
        
@@ -18,6 +32,8 @@
          (require rackunit)
          <test-to-bits>
          <test-from-bits>)]
+
+@defproc[(to-bits [n exact-nonnegative-integer?]) (listof boolean?)]{}
 
 @CHUNK[<to-bits>
        ;     1      =>                     1
@@ -57,6 +73,8 @@
        (check-equal? (to-bits 12) '(#t #t #f #f))
        (check-equal? (to-bits 1024) '(#t #f #f #f #f #f #f #f #f #f #f))]
 
+@defproc[(from-bits [n (listof boolean?)]) exact-nonnegative-integer?]{}
+
 @CHUNK[<from-bits>
        (define-for-syntax (from-bits b)
          (foldl (λ (bᵢ acc)
@@ -77,11 +95,21 @@
        (check-equal? (from-bits '(#t #t #f #f)) 12)
        (check-equal? (from-bits '(#t #f #f #f #f #f #f #f #f #f #f)) 1024)]
 
+@defproc[(floor-log2 [n exact-positive-integer?])
+         exact-nonnegative-integer?]{
+ Exact computation of @${\lfloor\log_2(n)\rfloor}.
+}
+
 @chunk[<floor-log2>
        (define-for-syntax (floor-log2 n)
          (if (<= n 1)
              0
              (add1 (floor-log2 (quotient n 2)))))]
+
+@defproc[(ceiling-log2 [n exact-positive-integer?])
+         exact-nonnegative-integer?]{
+ Exact computation of @${\lceil\log_2(n)\rceil}.
+}
 
 @chunk[<ceiling-log2>
        (define-for-syntax (ceiling-log2 n)

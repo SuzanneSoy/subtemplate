@@ -1,5 +1,14 @@
 #lang aful/unhygienic hyper-literate type-expander/lang
 
+@title[#;#:style #;(with-html5 manual-doc-style)
+       #:tag "flexible-with"
+       #:tag-prefix "phc-graph/flexible-with"]{Flexible functional
+ modification and extension of records}
+
+@(chunks-toc-prefix
+  '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"
+    "phc-graph/flexible-with"))
+
 @chunk[<*>
        (require (for-syntax (rename-in racket/base [... …])
                             syntax/stx
@@ -8,7 +17,7 @@
                             syntax/id-table
                             racket/sequence)
                 (for-meta 2 racket/base)
-                "flexible-with-utils.rkt")
+                "flexible-with-utils.hl.rkt")
        
        <tree-type-with-replacement>
        <define-replace-in-tree>
@@ -17,6 +26,9 @@
        <define-struct→tree>
        <define-trees>
        <example>]
+
+@racketblock[
+ (a #,(+ 1 1) b)]
 
 @CHUNK[<tree-type-with-replacement>
        (define-for-syntax (tree-type-with-replacement n last τ*)
@@ -222,3 +234,5 @@
 
        (ann (with-c (sab→tree 1 2) 'nine)
             ((bt-fields a b c) One Positive-Byte 'nine))]
+
+@include-section[(submod "flexible-with-utils.hl.rkt" doc)]
