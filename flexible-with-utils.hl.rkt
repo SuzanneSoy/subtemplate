@@ -2,8 +2,8 @@
 
 @(require scribble-math)
 
-@title[#:style manual-doc-style]{Flexible functional modification and
- extension of records (utility functions)}
+@title[#:style manual-doc-style]{Utility math functions for binary tree
+ manipulation}
 
 @(chunks-toc-prefix
   '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"

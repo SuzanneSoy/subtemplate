@@ -18,17 +18,26 @@
                             racket/sequence)
                 (for-meta 2 racket/base)
                 "flexible-with-utils.hl.rkt")
+
+       (provide (for-syntax define-trees)
+                ;; For tests:
+                (struct-out Some))
        
+       <maybe>
        <tree-type-with-replacement>
        <define-replace-in-tree>
+       <define-remove-in-tree>
        <convert-fields>
+       <convert-back-fields>
        <τ-tree-with-fields>
-       <define-struct→tree>
-       <define-trees>
-       <example>]
+       <define-struct↔tree>
+       <define-trees>]
 
-@racketblock[
- (a #,(+ 1 1) b)]
+@chunk[<maybe>
+       (struct (T) Some ([v : T]) #:transparent)
+       (define-type (Maybe T) (U (Some T) 'NONE))]
+
+@section{Type of a tree-record, with a hole}
 
 @CHUNK[<tree-type-with-replacement>
        (define-for-syntax (tree-type-with-replacement n last τ*)
@@ -43,9 +52,25 @@
                                             #`(Pairof #,(car τ*) #,last)
                                             (cdr τ*))]))]
 
+@section{Functionally updating a tree-record}
+
+@subsection{Adding and modifying fields}
+
+Since we only deal with functional updates of immutable records, modifying a
+field does little more than discarding the old value, and injecting the new
+value instead into the new, updated record.
+
+Adding a new field is done using the same exact operation: missing fields are
+denoted by a special value, @racket['NONE], while present fields are
+represented as instances of the polymorphic struct @racket[(Some T)]. Adding a
+new field is therefore as simple as discarding the old @racket['NONE] marker,
+and replacing it with the new value, wrapped with @racket[Some]. A field
+update would instead discard the old instance of @racket[Some], and replace it
+with a new one.
+
 @CHUNK[<make-replace-in-tree-body>
        (if (= i 1)
-           #'(λ () replacement)
+           replacement-thunk
            (let* ([bits (to-bits i)]
                   [next (from-bits (cons #t (cddr bits)))]
                   [mod (cadr bits)])
@@ -56,17 +81,20 @@
                        (let ([left-subtree (car tree)]
                              [right-subtree (cdr tree)])
                          (cons left-subtree
-                               ((next-id (λ () right-subtree) replacement))))))
+                               ((next-id (λ () right-subtree)
+                                         . replacement?))))))
                  #`(λ ()
                      (let ([tree (tree-thunk)])
                        (let ([left-subtree (car tree)]
                              [right-subtree (cdr tree)])
-                         (cons ((next-id (λ () left-subtree) replacement))
+                         (cons ((next-id (λ () left-subtree)
+                                         . replacement?))
                                right-subtree)))))))]
 
 @CHUNK[<define-replace-in-tree>
        (define-for-syntax (define-replace-in-tree names τ* i depth)
          (define/with-syntax name (vector-ref names (sub1 i)))
+         (define/with-syntax replacement? #'(replacement))
          (define τ*-limited (take τ* depth))
          #`(begin
              (provide name)
@@ -74,43 +102,53 @@
                 (∀ (#,@τ*-limited T)
                    (→ (→ #,(tree-type-with-replacement i #'Any τ*-limited))
                       T
-                      (→ #,(tree-type-with-replacement i #'T τ*-limited)))))
+                      (→ #,(tree-type-with-replacement i #'(Some T) τ*-limited)))))
              (define (name tree-thunk replacement)
-               #,<make-replace-in-tree-body>)))]
+               #,(let ([replacement-thunk #'(λ () (Some replacement))])
+                   <make-replace-in-tree-body>))))]
 
-@CHUNK[<convert-fields>
-       (define-for-syntax (convert-fields up fields+indices)
-         ;(displayln fields+indices)
-         (define (f i)
-           ;(displayln (list i '/ up (syntax->datum #`#,fields+indices)))
-           (if (and (pair? fields+indices) (= i (cdar fields+indices)))
-               (begin0
-                 (caar fields+indices)
-                 (set! fields+indices (cdr fields+indices)))
-               (if (>= (* i 2) up) ;; DEPTH
-                   ''MISSING
-                   (begin
-                     `(cons ,(f (* i 2))
-                            ,(f (add1 (* i 2))))))))
-         ;(displayln (syntax->datum #`#,(f 1)))
-         (f 1))]
+@subsection{Removing fields}
 
-@CHUNK[<convert-back-fields>
-       (define-for-syntax (convert-back-fields up fields+indices)
-         ;(displayln fields+indices)
-         (define (f i)
-           ;(displayln (list i '/ up (syntax->datum #`#,fields+indices)))
-           (if (and (pair? fields+indices) (= i (cdar fields+indices)))
-               (begin0
-                 (caar fields+indices)
-                 (set! fields+indices (cdr fields+indices)))
-               (if (>= (* i 2) up) ;; DEPTH
-                   ''MISSING
-                   (begin
-                     `(cons ,(f (* i 2))
-                            ,(f (add1 (* i 2))))))))
-         ;(displayln (syntax->datum #`#,(f 1)))
-         (f 1))]
+TODO: it would be better to factor this out, and simply choose whether to wrap
+with Some or use 'NONE on the "front-end" side.
+
+@CHUNK[<define-remove-in-tree>
+       (define-for-syntax (define-remove-in-tree names τ* i depth)
+         (define/with-syntax name (vector-ref names (sub1 i)))
+         (define/with-syntax replacement? #'())
+         (define τ*-limited (take τ* depth))
+         #`(begin
+             (provide name)
+             (: name
+                (∀ (#,@τ*-limited T)
+                   (→ (→ #,(tree-type-with-replacement i #'(Some Any) τ*-limited))
+                      (→ #,(tree-type-with-replacement i #''NONE τ*-limited)))))
+             (define (name tree-thunk)
+               #,(let ([replacement-thunk #'(λ () 'NONE)])
+                   <make-replace-in-tree-body>))))]
+
+@section{Auxiliary values}
+
+The following sections reuse a few values which are derived from the list of
+fields:
+
+@CHUNK[<utils>
+       (define all-fields #'(field …))
+       (define depth-above (ceiling-log2 (length (syntax->list #'(field …)))))
+       (define offset (expt 2 depth-above))
+       (define i*-above (range 1 (expt 2 depth-above)))
+       (define names (list->vector
+                      (append (map (λ (i) (format-id #'here "-with-~a" i))
+                                   i*-above)
+                              (stx-map (λ (f) (format-id f "with-~a" f))
+                                       #'(field …)))))
+       (define rm-names (list->vector
+                         (append (map (λ (i) (format-id #'here "-without-~a" i))
+                                      i*-above)
+                                 (stx-map (λ (f) (format-id f "without-~a" f))
+                                          #'(field …)))))]
+
+@section{Type of a tree-record}
 
 @CHUNK[<τ-tree-with-fields>
        (define-for-syntax (τ-tree-with-fields struct-fields fields)
@@ -136,17 +174,19 @@
            ;(displayln (list i '/ up (syntax->datum #`#,fields+indices)))
            (if (and (pair? fields+indices) (= i (cdar fields+indices)))
                (begin0
-                 (caar fields+indices)
+                 `(Some ,(caar fields+indices))
                  (set! fields+indices (cdr fields+indices)))
                (if (>= (* i 2) up) ;; DEPTH
-                   ''MISSING
+                   ''NONE
                    (begin
                      `(Pairof ,(f (* i 2))
                               ,(f (add1 (* i 2))))))))
          (f 1))]
 
-@CHUNK[<define-struct→tree>
-       (define-for-syntax (define-struct→tree
+@section{Conversion to and from record-trees}
+
+@CHUNK[<define-struct↔tree>
+       (define-for-syntax (define-struct↔tree
                             offset all-fields τ* struct-name fields)
          (define/with-syntax (field …) fields)
          (define/with-syntax fields→tree-name
@@ -178,10 +218,74 @@
                                        (Values field …))))
              (define (tree→fields-name tree-thunk)
                (define tree (tree-thunk))
-               (values (error "Not implmtd yet" 'field) …)
-               #;#,(convert-fields (* offset 2) fields+indices))))]
+               #,(convert-back-fields (* offset 2) fields+indices))))]
 
-@CHUNK[<define-trees>
+@subsection{Creating a new tree-record}
+
+@CHUNK[<convert-fields>
+       (define-for-syntax (convert-fields up fields+indices)
+         ;(displayln fields+indices)
+         (define (f i)
+           ;(displayln (list i '/ up (syntax->datum #`#,fields+indices)))
+           (if (and (pair? fields+indices) (= i (cdar fields+indices)))
+               (begin0
+                 `(Some ,(caar fields+indices))
+                 (set! fields+indices (cdr fields+indices)))
+               (if (>= (* i 2) up) ;; DEPTH
+                   ''NONE
+                   `(cons ,(f (* i 2))
+                          ,(f (add1 (* i 2)))))))
+         ;(displayln (syntax->datum #`#,(f 1)))
+         (f 1))]
+
+
+@subsection{Extracting all the fields from a tree-record}
+
+We traverse the tree in preorder, and accumulate definitions naming the
+interesting subparts of the trees (those where there are fields).
+
+@CHUNK[<convert-back-fields>
+       (define-for-syntax (convert-back-fields up fields+indices)
+         (define result '())
+         (define definitions '())
+         (define (f i t)
+           (if (and (pair? fields+indices) (= i (cdar fields+indices)))
+               (begin0
+                 (begin
+                   (set! result (cons #`(Some-v #,t) result))
+                   #t)
+                 (set! fields+indices (cdr fields+indices)))
+               (if (>= (* i 2) up) ;; DEPTH
+                   #f
+                   (let* ([left-t (string->symbol
+                                   (format "subtree-~a" (* i 2)))]
+                          [right-t (string->symbol
+                                    (format "subtree-~a" (add1 (* i 2))))]
+                          [left (f (* i 2) left-t)]
+                          [right (f (add1 (* i 2)) right-t)])
+                     (cond
+                       [(and left right)
+                        (set! definitions (cons #`(define #,left-t (car #,t))
+                                                definitions))
+                        (set! definitions (cons #`(define #,right-t (cdr #,t))
+                                                definitions))
+                        #t]
+                       [left
+                        (set! definitions (cons #`(define #,left-t (car #,t))
+                                                definitions))
+                        #t]
+                       [right
+                        (set! definitions (cons #`(define #,right-t (cdr #,t))
+                                                definitions))
+                        #t]
+                       [else
+                        #f])))))
+         (f 1 #'tree)
+         #`(begin #,@definitions (values . #,(reverse result))))]
+
+@section{Defining the converters and accessors for each known record type}
+
+@chunk[<define-trees>
        (define-for-syntax (define-trees stx)
          (syntax-case stx ()
            [(bt-fields-id (field …) [struct struct-field …] …)
@@ -190,49 +294,22 @@
               (define ∀-types (map #λ(format-id #'here "τ~a" %)
                                    (range (add1 depth-above))))
               (define total-nb-functions (vector-length names))
-              #`(begin
-                  (define-type-expander (bt-fields-id stx)
-                    (syntax-case stx ()
-                      [(_ . fs)
-                       #`(∀ fs (→ #,(τ-tree-with-fields #'fs
-                                                        #'(field …))))]))
-                  #,@(map #λ(define-replace-in-tree names ∀-types % (floor-log2 %))
-                          (range 1 (add1 total-nb-functions)))
-                  #,@(map #λ(define-struct→tree
-                              offset all-fields ∀-types %1 %2)
-                          (syntax->list #'(struct …))
-                          (syntax->list #'([struct-field …] …)))))]))]
+              <define-trees-result>)]))]
 
-@CHUNK[<utils>
-       (define all-fields #'(field …))
-       (define depth-above (ceiling-log2 (length (syntax->list #'(field …)))))
-       (define offset (expt 2 depth-above))
-       (define i*-above (range 1 (expt 2 depth-above)))
-       (define names (list->vector
-                      (append (map (λ (i) (format-id #'here "-with-~a" i))
-                                   i*-above)
-                              (stx-map (λ (f) (format-id f "with-~a" f))
-                                       #'(field …)))))]
-@CHUNK[<example>
-       (define-syntax (gs stx)
-         (syntax-case stx ()
-           [(_ bt-fields-id nfields (f …) [struct struct-field …] …)
-            (let ()
-              (define/with-syntax (field …)
-                (append (syntax->list #'(f …))
-                        (map (λ (_) (datum->syntax #'nfields (gensym 'g)))
-                             (range (- (syntax-e #'nfields)
-                                       (length (syntax->list #'(f …))))))))
-              (define-trees #'(bt-fields-id (field …) [struct struct-field …] …)))]))
-
-       ;(gs 6)
-       (gs bt-fields
-           16
-           (a b c)
-           [sab a b]
-           [sbc b c])
-
-       (ann (with-c (sab→tree 1 2) 'nine)
-            ((bt-fields a b c) One Positive-Byte 'nine))]
+@CHUNK[<define-trees-result>
+       #`(begin
+           (define-type-expander (bt-fields-id stx)
+             (syntax-case stx ()
+               [(_ . fs)
+                #`(∀ fs (→ #,(τ-tree-with-fields #'fs
+                                                 #'(field …))))]))
+           #,@(map #λ(define-replace-in-tree names ∀-types % (floor-log2 %))
+                   (range 1 (add1 total-nb-functions)))
+           #,@(map #λ(define-remove-in-tree rm-names ∀-types % (floor-log2 %))
+                   (range 1 (add1 total-nb-functions)))
+           #,@(map #λ(define-struct↔tree
+                       offset all-fields ∀-types %1 %2)
+                   (syntax->list #'(struct …))
+                   (syntax->list #'([struct-field …] …))))]
 
 @include-section[(submod "flexible-with-utils.hl.rkt" doc)]

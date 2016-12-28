@@ -10,12 +10,14 @@
                "typed-racket-lib"
                "srfi-lite-lib"
                "delay-pure"
-               "backport-template-pr1514"))
+               "backport-template-pr1514"
+               "typed-map"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
                      "typed-racket-doc"
-                     "aful"))
+                     "aful"
+                     "scribble-math"))
 (define scribblings
   '(("scribblings/phc-graph.scrbl" ()
                                    ("Data Structures"))
