@@ -1,14 +1,14 @@
-<!-- Tufts VUE 3.3.0 concept-map (Graph-notes-copy2.vue) 2016-11-19 -->
+<!-- Tufts VUE 3.3.0 concept-map (Graph-notes-copy2.vue) 2016-12-28 -->
 <!-- Tufts VUE: http://vue.tufts.edu/ -->
-<!-- Do Not Remove: VUE mapping @version(1.1) jar:file:/nix/store/miyaz9by4k195j53sbl6mgyky60xqjf1-vue-3.3.0/share/vue/vue.jar!/tufts/vue/resources/lw_mapping_1_1.xml -->
-<!-- Do Not Remove: Saved date Sat Nov 19 13:55:06 CET 2016 by georges on platform Linux 4.4.26 in JVM 1.8.0_76-00 -->
+<!-- Do Not Remove: VUE mapping @version(1.1) jar:file:/nix/store/z92y35qgs6g3cvvh0i4f14mg5n47zvvi-vue-3.3.0/share/vue/vue.jar!/tufts/vue/resources/lw_mapping_1_1.xml -->
+<!-- Do Not Remove: Saved date Wed Dec 28 16:01:31 CET 2016 by georges on platform Linux 4.4.38 in JVM 1.8.0_122-04 -->
 <!-- Do Not Remove: Saving version @(#)VUE: built October 8 2015 at 1724 by tomadm on Linux 2.6.32-504.23.4.el6.x86_64 i386 JVM 1.7.0_21-b11(bits=32) -->
 <?xml version="1.0" encoding="US-ASCII"?>
 <LW-MAP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="none" ID="0"
     label="Graph-notes-copy2.vue" created="1479309847604" x="0.0"
     y="0.0" width="1.4E-45" height="1.4E-45" strokeWidth="0.0" autoSized="false">
-    <resource referenceCreated="1479560106062" size="182377"
+    <resource referenceCreated="1482937291511" size="194857"
         spec="/home/georges/phc/racket-packages/phc-graph/Graph-notes-copy2.vue"
         type="1" xsi:type="URLResource">
         <title>Graph-notes-copy2.vue</title>
@@ -2292,7 +2292,7 @@
         label="A graph transformation lists its accepted input types, we have to make the code within work with all"
         layerID="1" created="1479345855459" x="2831.9707" y="421.74475"
         width="660.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2380,24 +2380,24 @@
     </child>
     <child ID="372"
         label="Need to make split / with / merge work with nodes,&#xa;or at least make the basic graph transformations work with explicit row polymorphism"
-        layerID="1" created="1479347912017" x="1593.9707" y="268.74475"
+        layerID="1" created="1479347912017" x="1595.9707" y="268.74475"
         width="565.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/7002a307c0a80026616d9239fea067fb</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="373" layerID="1" created="1479347912025" x="1881.9481"
-        y="306.24463" width="33.40454" height="104.0" strokeWidth="1.0"
+    <child ID="373" layerID="1" created="1479347912025" x="1883.6636"
+        y="306.24463" width="31.861328" height="104.0" strokeWidth="1.0"
         autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/7002a308c0a80026616d9239fd1b7118</URIString>
-        <point1 x="1914.8527" y="409.74463"/>
-        <point2 x="1882.4481" y="306.74463"/>
+        <point1 x="1915.0249" y="409.74463"/>
+        <point2 x="1884.1636" y="306.74463"/>
         <ID1 xsi:type="node">357</ID1>
         <ID2 xsi:type="node">372</ID2>
     </child>
@@ -2405,7 +2405,7 @@
         label="Provide a &quot;with&quot; form, so that mappings can extend or alter the inputs?"
         layerID="1" created="1479385905764" x="3414.6375" y="491.74475"
         width="473.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2436,7 +2436,7 @@
             label="Solution 1: hide the extra fields in the &quot;raw&quot; field"
             created="1479386144228" x="34.0" y="23.0" width="324.0"
             height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-            <fillColor>#F2AE45</fillColor>
+            <fillColor>#A6A6A6</fillColor>
             <strokeColor>#776D6D</strokeColor>
             <textColor>#000000</textColor>
             <font>SansSerif-plain-12</font>
@@ -2447,7 +2447,7 @@
             label="Solution 2: allow the use of split/with/merge, auto-insert a mergefor the + - &#xb1; cases"
             created="1479386844095" x="34.0" y="43.25" width="562.0"
             height="24.0" strokeWidth="1.0" autoSized="false" xsi:type="node">
-            <fillColor>#F2AE45</fillColor>
+            <fillColor>#FEFD8C</fillColor>
             <strokeColor>#776D6D</strokeColor>
             <textColor>#000000</textColor>
             <font>SansSerif-plain-12</font>
@@ -2458,7 +2458,7 @@
             label="Solution 3: in the mapping signature, explicitly indicate a row type variable"
             created="1479386922237" x="34.0" y="64.25" width="491.0"
             height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-            <fillColor>#F2AE45</fillColor>
+            <fillColor>#E6F7FD</fillColor>
             <strokeColor>#776D6D</strokeColor>
             <textColor>#000000</textColor>
             <font>SansSerif-plain-12</font>
@@ -2469,7 +2469,7 @@
             label="Partial solution: for mappings which specify a derived type (with + - &#xb1;) for their output, auto-copy the remaining fields?"
             created="1479385818415" x="34.0" y="84.5" width="782.0"
             height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-            <fillColor>#FCDBD9</fillColor>
+            <fillColor>#E6F7FD</fillColor>
             <strokeColor>#776D6D</strokeColor>
             <textColor>#000000</textColor>
             <font>SansSerif-plain-12</font>
@@ -2480,7 +2480,7 @@
             label="Allow limited-field mappings (mappings from n to m fields of a node, keeping the rest intact)"
             created="1479387268964" x="34.0" y="104.75" width="604.0"
             height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-            <fillColor>#F2AE45</fillColor>
+            <fillColor>#E6F7FD</fillColor>
             <strokeColor>#776D6D</strokeColor>
             <textColor>#000000</textColor>
             <font>SansSerif-plain-12</font>
@@ -2506,7 +2506,7 @@
         label="Problem: these operations need to explicitly specify the possible types&#xa;for the auto-insertion, it's okay (we know them statically), but for user code it's a bit too verbose"
         layerID="1" created="1479387124402" x="3501.6375" y="581.24475"
         width="645.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#FC938D</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2529,7 +2529,7 @@
         label="Could we define some sort of &quot;with&quot; macro which just acts like cons, and leave the fusion of fields to be done outside of the graph?&#xa;It then becomes possible to combine the return type info with the input type info to limit the number of cases to handle"
         layerID="1" created="1479387466709" x="3503.6375" y="652.74475"
         width="870.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2696,7 +2696,7 @@
         label="1. record the fields added via node-with+, node-with! and node-with!!&#xa;2. The types which may have been added are therefore:&#xa;(difference input-types output-types) &#x2229; fields-mentionned-in-with*"
         layerID="1" created="1479390037236" x="3858.6375" y="740.74475"
         width="466.0" height="53.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2719,7 +2719,7 @@
         label="This does not allowof mixing the explicit with* for structures and the node-with*"
         layerID="1" created="1479390248006" x="4378.6377" y="811.74475"
         width="526.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#FC938D</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2752,25 +2752,25 @@
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
     <child ID="423"
-        label="To pass the graph row tvar to other functions, make a new sort of &#x2200; (like for #:row),&#xa;and use (g-row-inst f g-row-var).&#xa;I doubt we could find a way to infer the graph row variable to pass in a feasible way.&#xa;We could override #%app to allow a more concise syntax, but that's it."
-        layerID="1" created="1479403067621" x="3011.6375" y="763.24475"
-        width="562.0" height="68.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#FCDBD9</fillColor>
+        label="To pass the graph row tvar to other functions, make a new sort of &#x2200; (like for #:row),&#xa;and use (g-row-inst f g-row-var)."
+        layerID="1" created="1479403067621" x="3020.6375" y="765.24475"
+        width="562.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#E6F7FD</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/7353a85bafd9d7675fea10f24895dc43</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="424" layerID="1" created="1479403607747" x="3076.5981"
-        y="632.74475" width="171.85425" height="131.0" strokeWidth="1.0"
+    <child ID="424" layerID="1" created="1479403607747" x="3078.0073"
+        y="632.74475" width="196.0542" height="133.0" strokeWidth="1.0"
         autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/7353a85bafd9d7675fea10f2505e36aa</URIString>
-        <point1 x="3077.0981" y="633.24475"/>
-        <point2 x="3247.9524" y="763.24475"/>
+        <point1 x="3078.5073" y="633.24475"/>
+        <point2 x="3273.5615" y="765.24475"/>
         <ID1 xsi:type="node">383</ID1>
         <ID2 xsi:type="node">423</ID2>
     </child>
@@ -2778,7 +2778,7 @@
         label="Won't handle gracefully the case of mappings returning nested nodes"
         layerID="1" created="1479387344773" x="3337.1375" y="716.74475"
         width="468.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#FCDBD9</fillColor>
+        <fillColor>#FC938D</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2827,7 +2827,7 @@
         label="Don't record the fields added. Instead, return a tagged structure with *only* the fields added, and stash aside the original.&#xa;We know what the original may be statically (one of the graph's nodes)."
         layerID="1" created="1479404327217" x="3520.6375" y="854.74475"
         width="818.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2874,7 +2874,7 @@
         label="Optionnally parameterize node types with an extra polymorphic type for the &quot;row&quot;&#xa;This poly type encapsulates the &quot;extra&quot; fields.&#xa;The return type of the mapping should indicate that the node has a &quot;row&quot; and which tvar to use&#xa;Statically, we can recognize that from the input, and perform the merge in an easy way"
         layerID="1" created="1479481584246" x="2273.6375" y="737.74475"
         width="635.0" height="68.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2921,7 +2921,7 @@
     <child ID="443" label="More solutions" layerID="1"
         created="1479486767440" x="3081.6375" y="272.74475"
         width="110.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2944,7 +2944,7 @@
         label="Cheapy trivial tracking: use let-syntax on the inputs, so that we know their type"
         layerID="1" created="1479486772901" x="2382.6375" y="160.74475"
         width="527.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2966,24 +2966,25 @@
     </child>
     <child ID="447"
         label="When the result is just a single node for which we know the type (but not the chain of with! etc.)&#xa;auto-create the node, filling each field via (get-field f result) || (get-field f (next result)) || &#x2026;&#xa;and with! etc. only return a sort of pair with the new or overwritten fields in a tagged structure at the front, and the original in the rest"
-        layerID="1" created="1479486800251" x="2542.6375" y="-37.25525"
+        layerID="1" created="1479486800251" x="2352.6375" y="-40.25525"
         width="887.0" height="53.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/784b625ac0a83801659a3967a167ad78</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="448" layerID="1" created="1479486800255" x="2999.1572"
-        y="15.244629" width="132.11353" height="258.0" strokeWidth="1.0"
-        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+    <child ID="448" layerID="1" created="1479486800255" x="2825.917"
+        y="12.244873" width="298.08008" height="260.99976"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/784b625ac0a83801659a396755702e91</URIString>
-        <point1 x="3130.7705" y="272.74463"/>
-        <point2 x="2999.657" y="15.744629"/>
+        <point1 x="3123.497" y="272.74463"/>
+        <point2 x="2826.417" y="12.744873"/>
         <ID1 xsi:type="node">443</ID1>
         <ID2 xsi:type="node">447</ID2>
     </child>
@@ -3012,30 +3013,31 @@
     </child>
     <child ID="455"
         label="Could work, we don't need to statically know the type for get-field/fallback"
-        layerID="1" created="1479487076289" x="2798.6375" y="-182.25525"
+        layerID="1" created="1479487076289" x="2513.6375" y="-207.25525"
         width="492.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/784e56cfc0a83801659a3967c532603f</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="456" layerID="1" created="1479487076302" x="2995.3267"
-        y="-159.75537" width="45.6062" height="123.0" strokeWidth="1.0"
-        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+    <child ID="456" layerID="1" created="1479487076302" x="2761.4438"
+        y="-184.75488" width="29.878906" height="145.0"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/784e56cfc0a83801659a39678a19388f</URIString>
-        <point1 x="2995.8267" y="-37.25537"/>
-        <point2 x="3040.4329" y="-159.25537"/>
+        <point1 x="2790.8228" y="-40.254883"/>
+        <point2 x="2761.9438" y="-184.25488"/>
         <ID1 xsi:type="node">447</ID1>
         <ID2 xsi:type="node">455</ID2>
     </child>
     <child ID="457"
         label="but we must ensure that the return type is correct. How could we do that???"
-        layerID="1" created="1479487132743" x="3060.6375" y="-137.25525"
+        layerID="1" created="1479487132743" x="3062.6375" y="-216.25525"
         width="508.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#FC938D</fillColor>
         <strokeColor>#776D6D</strokeColor>
@@ -3044,38 +3046,39 @@
         <URIString>http://vue.tufts.edu/rdf/resource/784e56d0c0a83801659a396759692c9e</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="458" layerID="1" created="1479487132747" x="3113.1375"
-        y="-159.75525" width="133.0" height="23.0" strokeWidth="1.0"
-        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+    <child ID="458" layerID="1" created="1479487132747" x="3004.6394"
+        y="-201.15958" width="59.021973" height="1.9375153"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/784e56d0c0a83801659a3967b64162ba</URIString>
-        <point1 x="3113.6375" y="-159.25525"/>
-        <point2 x="3245.6375" y="-137.25525"/>
+        <point1 x="3005.1394" y="-199.72206"/>
+        <point2 x="3063.1614" y="-200.65958"/>
         <ID1 xsi:type="node">455</ID1>
         <ID2 xsi:type="node">457</ID2>
     </child>
     <child ID="463"
         label="Bind the result with let, letting it infer the type,&#xa;grab the fields with get-field/fallback&#xa;and only enforce the type on the result / on the individual fields"
-        layerID="1" created="1479489493797" x="3379.6375" y="-105.25525"
+        layerID="1" created="1479489493797" x="3104.6375" y="-178.25525"
         width="425.0" height="53.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/7872f6c7c0a83801659a3967b9244b5d</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="464" layerID="1" created="1479489493820" x="3382.0361"
-        y="-114.75525" width="54.138428" height="10.0" strokeWidth="1.0"
+    <child ID="464" layerID="1" created="1479489493820" x="3316.2458"
+        y="-193.75" width="1.1416016" height="16.0" strokeWidth="1.0"
         autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/7872f6c7c0a83801659a3967fb310cfc</URIString>
-        <point1 x="3382.5364" y="-114.25525"/>
-        <point2 x="3435.6748" y="-105.25525"/>
+        <point1 x="3316.7458" y="-193.25"/>
+        <point2 x="3316.8875" y="-178.25"/>
         <ID1 xsi:type="node">457</ID1>
         <ID2 xsi:type="node">463</ID2>
     </child>
@@ -3083,7 +3086,7 @@
         label="Subtyping and recursive types with TR sometimes rejects valid subtyping relationships"
         layerID="1" created="1479489570917" x="1969.6375" y="479.74475"
         width="570.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#FEFD8C</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -3104,10 +3107,10 @@
         <ID2 xsi:type="node">465</ID2>
     </child>
     <child ID="467"
-        label="Not so much of a problem,&#xa;because we don't use subtyping, we use *bounded* row polymorphism&#xa;so we always know the exact list of types allwed,&#xa;and don't really use the subtyping aside from (U alt&#x2081; &#x2026; alt&#x2099;)"
+        label="Not so much of a problem,&#xa;because we don't use subtyping, we use *bounded* row polymorphism&#xa;so we always know the exact list of types allwed,&#xa;and don't really use the subtyping aside from (U alt&#x2081; &#x2026; alt&#x2099;) at the top"
         layerID="1" created="1479489603603" x="2039.6375" y="536.74475"
         width="470.0" height="68.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#FEFD8C</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -3128,7 +3131,7 @@
     </child>
     <child ID="471"
         label="Pb: a loop will loose type information, so we have to hardcode a few iterations of fetching ->next"
-        layerID="1" created="1479493749797" x="3469.6375" y="-18.255249"
+        layerID="1" created="1479493749797" x="2996.6375" y="-109.25525"
         width="647.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#FC938D</fillColor>
         <strokeColor>#776D6D</strokeColor>
@@ -3137,38 +3140,39 @@
         <URIString>http://vue.tufts.edu/rdf/resource/78b501a5c0a83801659a39678e8cb2cd</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="472" layerID="1" created="1479493749799" x="3665.6167"
-        y="-52.75525" width="95.916504" height="35.0" strokeWidth="1.0"
+    <child ID="472" layerID="1" created="1479493749799" x="3318.1099"
+        y="-125.75391" width="1.888916" height="17.0" strokeWidth="1.0"
         autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/78b501a6c0a83801659a39673e57b5e0</URIString>
-        <point1 x="3666.1167" y="-52.25525"/>
-        <point2 x="3761.0332" y="-18.255249"/>
+        <point1 x="3318.6096" y="-125.25391"/>
+        <point2 x="3319.4985" y="-109.25391"/>
         <ID1 xsi:type="node">463</ID1>
         <ID2 xsi:type="node">471</ID2>
     </child>
     <child ID="473"
         label="To avoid a large code blowup, factor out the get-field which will be called in several places in a polymorphic function?"
-        layerID="1" created="1479493833435" x="3405.6375" y="35.74475"
+        layerID="1" created="1479493833435" x="2934.6375" y="-73.25525"
         width="773.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/78b501a6c0a83801659a396729606ba0</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="474" layerID="1" created="1479493833437" x="3791.8503"
-        y="4.25" width="1.5742188" height="32.0" strokeWidth="1.0"
-        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+    <child ID="474" layerID="1" created="1479493833437" x="3319.9565"
+        y="-86.75781" width="1.361084" height="13.9921875"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/78b501a6c0a83801659a39679b169ce5</URIString>
-        <point1 x="3792.9246" y="4.75"/>
-        <point2 x="3792.3503" y="35.75"/>
+        <point1 x="3320.4568" y="-86.25781"/>
+        <point2 x="3320.8179" y="-73.265625"/>
         <ID1 xsi:type="node">471</ID1>
         <ID2 xsi:type="node">473</ID2>
     </child>
@@ -3176,7 +3180,7 @@
         label="Must specify the node name or tag+fields in the with* forms, possibly with a &quot;row&quot; variable.&#xa;The node name should be concise enough that it's not too much of a pain to write it in a lot of places."
         layerID="1" created="1479493941528" x="3284.6375" y="211.74475"
         width="681.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -3201,7 +3205,7 @@
         label="Detect all structure types which are present as inputs or outputs (or within the mapping?)&#xa;and use that information to make a large case handling"
         layerID="1" created="1479494059762" x="3265.6375" y="266.74475"
         width="598.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -3265,31 +3269,32 @@
         <ID2 xsi:type="node">484</ID2>
     </child>
     <child ID="488"
-        label="Since we don't need occurrence typing for incomplete nodes,&#xa;can we use the representation as a case&#x2192; ?"
+        label="Since we don't need occurrence typing for incomplete nodes&#x2026;"
         layerID="1" created="1479494214687" x="3106.6375" y="109.74475"
-        width="410.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        width="419.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
         <URIString>http://vue.tufts.edu/rdf/resource/78ba99b9c0a83801659a396792c09d82</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="489" layerID="1" created="1479494214689" x="3149.0796"
-        y="147.24463" width="141.67554" height="126.0" strokeWidth="1.0"
-        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+    <child ID="489" layerID="1" created="1479494214689" x="3148.8015"
+        y="132.24487" width="155.17188" height="140.99976"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/78ba99b9c0a83801659a396789c84846</URIString>
-        <point1 x="3149.5796" y="272.74463"/>
-        <point2 x="3290.2551" y="147.74463"/>
+        <point1 x="3149.3015" y="272.74463"/>
+        <point2 x="3303.4734" y="132.74487"/>
         <ID1 xsi:type="node">443</ID1>
         <ID2 xsi:type="node">488</ID2>
     </child>
     <child ID="490"
         label="Pb: I'm not sure we can type this correctly (perhaps relying heavily on inference?"
-        layerID="1" created="1479494404441" x="3556.6375" y="113.74475"
+        layerID="1" created="1479494404441" x="3681.6375" y="-20.255249"
         width="534.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#FC938D</fillColor>
         <strokeColor>#776D6D</strokeColor>
@@ -3298,18 +3303,232 @@
         <URIString>http://vue.tufts.edu/rdf/resource/78bd72dec0a83801659a39679db74cd5</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="491" layerID="1" created="1479494404443" x="3516.1377"
-        y="126.5695" width="41.065674" height="1.2738876"
+    <child ID="498" label="Key" layerID="1" created="1482930066792"
+        x="1898.6375" y="-205.75525" width="395.75" height="172.5"
+        strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#F4F5E9</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-18</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45873cde534430712734d86ab1152fe7</URIString>
+        <child ID="499" label="Potential solution (not implemented yet)"
+            created="1482930095971" x="34.0" y="30.0" width="361.33334"
+            height="27.0" strokeWidth="1.0" autoSized="false" xsi:type="node">
+            <fillColor>#FFC63B</fillColor>
+            <strokeColor>#776D6D</strokeColor>
+            <textColor>#000000</textColor>
+            <font>SansSerif-plain-16</font>
+            <URIString>http://vue.tufts.edu/rdf/resource/45873cde534430712734d86a6173ded7</URIString>
+            <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+        </child>
+        <child ID="495" label="Problem" created="1482929988379" x="34.0"
+            y="53.25" width="86.666664" height="27.0" strokeWidth="1.0"
+            autoSized="false" xsi:type="node">
+            <fillColor>#FC938D</fillColor>
+            <strokeColor>#776D6D</strokeColor>
+            <textColor>#000000</textColor>
+            <font>SansSerif-plain-16</font>
+            <URIString>http://vue.tufts.edu/rdf/resource/45873cdf534430712734d86a3f094d92</URIString>
+            <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+        </child>
+        <child ID="493" label="Should be OK (not implemented yet)"
+            created="1482929962993" x="34.0" y="76.5" width="318.66666"
+            height="27.0" strokeWidth="1.0" autoSized="false" xsi:type="node">
+            <fillColor>#FEFD8C</fillColor>
+            <strokeColor>#776D6D</strokeColor>
+            <textColor>#000000</textColor>
+            <font>SansSerif-plain-16</font>
+            <URIString>http://vue.tufts.edu/rdf/resource/45873cdf534430712734d86a14e4a638</URIString>
+            <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+        </child>
+        <child ID="494" label="Done" created="1482929973452" x="34.0"
+            y="99.75" width="63.0" height="27.0" strokeWidth="1.0"
+            autoSized="false" xsi:type="node">
+            <fillColor>#C1F780</fillColor>
+            <strokeColor>#5491A4</strokeColor>
+            <textColor>#000000</textColor>
+            <font>SansSerif-plain-16</font>
+            <URIString>http://vue.tufts.edu/rdf/resource/45873cdf534430712734d86a1e77c5e8</URIString>
+            <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+        </child>
+        <child ID="500"
+            label="Valid but not implemented alternative / enhancement"
+            created="1482930253480" x="34.0" y="123.0" width="474.66666"
+            height="27.0" strokeWidth="1.0" autoSized="false" xsi:type="node">
+            <fillColor>#E6F7FD</fillColor>
+            <strokeColor>#776D6D</strokeColor>
+            <textColor>#000000</textColor>
+            <font>SansSerif-plain-16</font>
+            <URIString>http://vue.tufts.edu/rdf/resource/45bba55b534430712734d86a7b98e7af</URIString>
+            <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+        </child>
+        <child ID="496" label="Rejected solution"
+            created="1482930039269" x="34.0" y="146.25"
+            width="153.33333" height="27.0" strokeWidth="1.0"
+            autoSized="false" xsi:type="node">
+            <fillColor>#A6A6A6</fillColor>
+            <strokeColor>#776D6D</strokeColor>
+            <textColor>#000000</textColor>
+            <font>SansSerif-plain-16</font>
+            <URIString>http://vue.tufts.edu/rdf/resource/45873cdf534430712734d86aab608348</URIString>
+            <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+        </child>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="503"
+        label="I doubt we could find a way to infer the graph row variable to pass in a feasible way.&#xa;We could override #%app to allow a more concise syntax, but that's it."
+        layerID="1" created="1482933605087" x="2936.6375" y="845.24475"
+        width="559.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#FC938D</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45bba55c534430712734d86a16caa731</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="506" layerID="1" created="1482933646174" x="3235.9436"
+        y="802.7446" width="45.887695" height="43.000244"
         strokeWidth="1.0" autoSized="false" controlCount="0"
         arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
-        <URIString>http://vue.tufts.edu/rdf/resource/78bd72dec0a83801659a3967f6f854cc</URIString>
-        <point1 x="3516.6375" y="127.34339"/>
-        <point2 x="3556.7031" y="127.0695"/>
+        <URIString>http://vue.tufts.edu/rdf/resource/45bbf23d534430712734d86a4fad75b2</URIString>
+        <point1 x="3281.3313" y="803.2446"/>
+        <point2 x="3236.4436" y="845.2449"/>
+        <ID1 xsi:type="node">423</ID1>
+        <ID2 xsi:type="node">503</ID2>
+    </child>
+    <child ID="507"
+        label="can we use the representation as a case&#x2192; ?"
+        layerID="1" created="1482936022767" x="3303.6375" y="-14.255249"
+        width="309.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#A6A6A6</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45e66670534430712734d86a57e07278</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="508" layerID="1" created="1482936022770" x="3328.8071"
+        y="8.244629" width="116.66138" height="102.0" strokeWidth="1.0"
+        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-11</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45e66670534430712734d86a070392ee</URIString>
+        <point1 x="3329.307" y="109.74463"/>
+        <point2 x="3444.9683" y="8.744629"/>
         <ID1 xsi:type="node">488</ID1>
+        <ID2 xsi:type="node">507</ID2>
+    </child>
+    <child ID="509" layerID="1" created="1482936026239" x="3612.0593"
+        y="-5.9935493" width="70.43408" height="1.8493462"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-11</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45e66670534430712734d86a90157415</URIString>
+        <point1 x="3612.5593" y="-4.644203"/>
+        <point2 x="3681.9934" y="-5.4935493"/>
+        <ID1 xsi:type="node">507</ID1>
         <ID2 xsi:type="node">490</ID2>
+    </child>
+    <child ID="510"
+        label="Representation as a binary tree with fields as the leaves.&#xa;To avoid the memory cost of carrying the intermediate nodes, we actually store the fields inside a closure,&#xa;which builds and returns the tree on request.&#xa;When initially building such records, known record types can be represented in a compact way.&#xa;When the record is updated (add / remove / modify fields), a series of &quot;delta&quot; patches are stored,&#xa;with a memory cost of O(1) per patch and a run-time extraction cost of O(log N) per patch (where N is the total number of fields in the program)"
+        layerID="1" created="1482936061557" x="3611.6375" y="65.74475"
+        width="944.0" height="98.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#C1F780</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45e66670534430712734d86a3a5e0161</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="511" layerID="1" created="1482936061559" x="3525.0825"
+        y="118.24214" width="87.05493" height="1.7288055"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-11</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45e66670534430712734d86ac0cf2c24</URIString>
+        <point1 x="3525.5825" y="119.47095"/>
+        <point2 x="3611.6375" y="118.74214"/>
+        <ID1 xsi:type="node">488</ID1>
+        <ID2 xsi:type="node">510</ID2>
+    </child>
+    <child ID="512"
+        label="To also get occurrence typing (probably not across modified versions of a record, only for the same exact unmodified record),&#xa;we can turn the closure over the field values (which is a thunk) into a pure promise.&#xa;Accessing the fields will be slower (O(log N) + O(log N) per patch), but at least it can be done without loss of functionality&#xa;(accesses of modified records within a mapping should be rare in practice, so the cost is acceptble)"
+        layerID="1" created="1482936478751" x="3997.6377" y="204.74475"
+        width="835.0" height="68.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#FEFD8C</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45ec4fff534430712734d86aa07fbb12</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="513" layerID="1" created="1482936478755" x="4214.134"
+        y="163.24487" width="110.6084" height="41.999878"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45ec4fff534430712734d86a24c87b1e</URIString>
+        <point1 x="4214.634" y="163.74487"/>
+        <point2 x="4324.242" y="204.74475"/>
+        <ID1 xsi:type="node">510</ID1>
+        <ID2 xsi:type="node">512</ID2>
+    </child>
+    <child ID="514"
+        label="Problem: how do we make the field accessors &quot;hybrid&quot;, i.e. working both on fixed records and flex records?&#xa;We don't want nested field accesses to build up a tower of U types, which makes acceesses very costly for the typechecker"
+        layerID="1" created="1482936685798" x="4032.6377" y="309.24475"
+        width="822.0" height="38.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#FC938D</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45ec4fff534430712734d86a19adbd4d</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="516" layerID="1" created="1482936769032" x="4425.4644"
+        y="272.24512" width="12.623047" height="37.5" strokeWidth="1.0"
+        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45ec4fff534430712734d86a0c6770e9</URIString>
+        <point1 x="4425.9644" y="272.74512"/>
+        <point2 x="4437.5874" y="309.24512"/>
+        <ID1 xsi:type="node">512</ID1>
+        <ID2 xsi:type="node">514</ID2>
+    </child>
+    <child ID="517"
+        label="It's already the case anyway when a field appears in more than a single struct."
+        layerID="1" created="1482936781221" x="4178.6377" y="372.74475"
+        width="527.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#FFC63B</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45ec4fff534430712734d86a0944806f</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="518" layerID="1" created="1482936781223" x="4441.9453"
+        y="346.76562" width="1.6831055" height="26.484375"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/45ec4fff534430712734d86a1c61af46</URIString>
+        <point1 x="4443.1284" y="347.26562"/>
+        <point2 x="4442.4453" y="372.75"/>
+        <ID1 xsi:type="node">514</ID1>
+        <ID2 xsi:type="node">517</ID2>
     </child>
     <layer ID="1" label="Layer 1" created="1479309847607" x="0.0"
         y="0.0" width="1.4E-45" height="1.4E-45" strokeWidth="0.0" autoSized="false">

@@ -20,7 +20,6 @@
                         (field …)
                         [struct struct-field …] …)))]))
 
-;(gs 6)
 (gs bt-fields
     16
     (a b c)
@@ -29,8 +28,9 @@
     [sabc a b c])
 
 (check-equal?:
- (~> ((ann (with-c (sab→tree 1 2) 'nine)
-           ((bt-fields a b c) One Positive-Byte 'nine)))
+ (~> (ann (with-c (sab→tree 1 2) 'nine)
+          ((bt-fields a b c) One Positive-Byte 'nine))
+     force
      flatten
      (filter Some? _)
      (map Some-v _)
