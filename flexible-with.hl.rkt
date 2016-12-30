@@ -42,46 +42,74 @@ with a new one.
 
 @CHUNK[<make-replace-in-tree-body>
        (if (= i 1)
-           replacement-thunk
+           #'(delay/pure/stateless replacement)
            (let* ([bits (to-bits i)]
                   [next (from-bits (cons #t (cddr bits)))]
                   [mod (cadr bits)])
-             (define/with-syntax next-id (vector-ref names (sub1 next)))
+             (define/with-syntax next-id (vector-ref low-names (sub1 next)))
              (if mod
                  #`(delay/pure/stateless
-                     (let ([tree (force tree-thunk)])
-                       (let ([left-subtree (car tree)]
-                             [right-subtree (cdr tree)])
-                         (cons left-subtree
-                               (force (next-id (delay/pure/stateless right-subtree)
-                                               . replacement?))))))
+                    (let ([tree (force tree-thunk)])
+                      (let ([left-subtree (car tree)]
+                            [right-subtree (cdr tree)])
+                        (cons left-subtree
+                              (force (next-id (delay/pure/stateless right-subtree)
+                                              . replacement?))))))
                  #`(delay/pure/stateless
-                     (let ([tree (force tree-thunk)])
-                       (let ([left-subtree (car tree)]
-                             [right-subtree (cdr tree)])
-                         (cons (force (next-id (delay/pure/stateless left-subtree)
-                                               . replacement?))
-                               right-subtree)))))))]
+                    (let ([tree (force tree-thunk)])
+                      (let ([left-subtree (car tree)]
+                            [right-subtree (cdr tree)])
+                        (cons (force (next-id (delay/pure/stateless left-subtree)
+                                              . replacement?))
+                              right-subtree)))))))]
 
 @CHUNK[<define-replace-in-tree>
-       (define-for-syntax (define-replace-in-tree names τ* i depth)
+       (define-for-syntax (define-replace-in-tree low-names names rm-names τ* i depth)
          (define/with-syntax name (vector-ref names (sub1 i)))
+         (define/with-syntax rm-name (vector-ref rm-names (sub1 i)))
+         (define/with-syntax low-name (vector-ref low-names (sub1 i)))
+         (define/with-syntax tree-type-with-replacement-name (gensym 'tree-type-with-replacement))
          (define/with-syntax replacement? #'(replacement))
          (define τ*-limited (take τ* depth))
          #`(begin
-             (provide name)
-             (: name
+             (provide name rm-name)
+             (define-type (tree-type-with-replacement-name #,@τ*-limited T)
+               (Promise #,(tree-type-with-replacement i #'T τ*-limited)))
+             (: low-name
                 (∀ (#,@τ*-limited T)
-                   (→ (Promise #,(tree-type-with-replacement i #'Any τ*-limited))
+                   (→ (tree-type-with-replacement-name #,@τ*-limited Any)
                       T
-                      (Promise #,(tree-type-with-replacement i #'(Some T) τ*-limited)))))
+                      (tree-type-with-replacement-name #,@τ*-limited T))))
              (define-pure/stateless
                #:∀ (#,@τ*-limited T)
-               (name [tree-thunk : (Promise #,(tree-type-with-replacement i #'Any τ*-limited))]
+               (low-name [tree-thunk : (tree-type-with-replacement-name #,@τ*-limited Any)]
+                         [replacement : T])
+               : (Promise #,(tree-type-with-replacement i #'T τ*-limited))
+               #,<make-replace-in-tree-body>)
+
+             (: name
+                (∀ (#,@τ*-limited T)
+                   (→ (tree-type-with-replacement-name #,@τ*-limited Any)
+                      T
+                      (tree-type-with-replacement-name #,@τ*-limited (Some T)))))
+             (define (name tree-thunk replacement)
+               (low-name tree-thunk (Some replacement)))
+             #;(define-pure/stateless
+               #:∀ (#,@τ*-limited T)
+               (name [tree-thunk : (tree-type-with-replacement-name #,@τ*-limited Any)]
                      [replacement : T])
-               : (Promise #,(tree-type-with-replacement i #'(Some T) τ*-limited))
-               #,(let ([replacement-thunk #'(delay/pure/stateless (Some replacement))])
-                   <make-replace-in-tree-body>))))]
+               (low-name tree-thunk (Some replacement)))
+             
+             (: rm-name
+                (∀ (#,@τ*-limited)
+                   (→ (tree-type-with-replacement-name #,@τ*-limited (Some Any))
+                      (tree-type-with-replacement-name #,@τ*-limited 'NONE))))
+             (define (rm-name tree-thunk)
+               (low-name tree-thunk 'NONE))
+             #;(define-pure/stateless
+               #:∀ (#,@τ*-limited)
+               (rm-name [tree-thunk : (tree-type-with-replacement-name #,@τ*-limited (Some Any))])
+               (low-name tree-thunk 'NONE))))]
 
 @subsection{Removing fields}
 
@@ -126,7 +154,12 @@ fields:
                          (append (map (λ (i) (format-id #'here "-without-~a" i))
                                       i*-above)
                                  (stx-map (λ (f) (format-id f "without-~a" f))
-                                          #'(field …)))))]
+                                          #'(field …)))))
+       (define low-names (list->vector
+                          (append (map (λ (i) (format-id #'here "-u-with-~a" i))
+                                       i*-above)
+                                  (stx-map (λ (f) (format-id f "u-with-~a" f))
+                                           #'(field …)))))]
 
 @section{Type of a tree-record}
 
@@ -190,7 +223,7 @@ fields:
                                                                       all-fields)))))
              (define (fields→tree-name field …)
                (delay/pure/stateless
-                 #,(convert-fields (* offset 2) fields+indices)))
+                #,(convert-fields (* offset 2) fields+indices)))
 
              (: tree→fields-name (∀ (field …)
                                     (→ (Promise #,(τ-tree-with-fields #'(field …)
@@ -265,7 +298,7 @@ interesting subparts of the trees (those where there are fields).
 
 @section{Defining the converters and accessors for each known record type}
 
-@chunk[<define-trees>
+@CHUNK[<define-trees>
        (define-for-syntax (define-trees stx)
          (syntax-case stx ()
            [(bt-fields-id (field …) [struct struct-field …] …)
@@ -276,17 +309,22 @@ interesting subparts of the trees (those where there are fields).
               (define total-nb-functions (vector-length names))
               <define-trees-result>)]))]
 
+@CHUNK[<bt-fields-type>
+       (define-for-syntax (bt-fields-type fields)
+         (λ (stx)
+           (syntax-case stx ()
+             [(_ . fs)
+              #`(∀ fs (Promise #,(τ-tree-with-fields #'fs
+                                                     fields)))])))]
+
 @CHUNK[<define-trees-result>
        #`(begin
-           (define-type-expander (bt-fields-id stx)
-             (syntax-case stx ()
-               [(_ . fs)
-                #`(∀ fs (Promise #,(τ-tree-with-fields #'fs
-                                                       #'(field …))))]))
-           #,@(map #λ(define-replace-in-tree names ∀-types % (floor-log2 %))
+           (define-type-expander bt-fields-id
+             (bt-fields-type #'#,(syntax-local-introduce #'(field …))))
+           #,@(map #λ(define-replace-in-tree low-names names rm-names ∀-types % (floor-log2 %))
                    (range 1 (add1 total-nb-functions)))
-           #,@(map #λ(define-remove-in-tree rm-names ∀-types % (floor-log2 %))
-                   (range 1 (add1 total-nb-functions)))
+           #;#,@(map #λ(define-remove-in-tree rm-names ∀-types % (floor-log2 %))
+                     (range 1 (add1 total-nb-functions)))
            #,@(map #λ(define-struct↔tree
                        offset all-fields ∀-types %1 %2)
                    (syntax->list #'(struct …))
@@ -320,11 +358,12 @@ interesting subparts of the trees (those where there are fields).
        <maybe>
        <tree-type-with-replacement>
        <define-replace-in-tree>
-       <define-remove-in-tree>
+       ;<define-remove-in-tree>
        <convert-fields>
        <convert-back-fields>
        <τ-tree-with-fields>
        <define-struct↔tree>
-       <define-trees>]
+       <define-trees>
+       <bt-fields-type>]
 
 @include-section[(submod "flexible-with-utils.hl.rkt" doc)]

@@ -13,3 +13,4 @@ the @other-doc['(lib "phc-graph/scribblings/phc-graph.scrbl")] document.
 
 @include-section[(submod "../traversal.hl.rkt" doc)]
 @include-section[(submod "../flexible-with.hl.rkt" doc)]
+@include-section[(submod "../invariants-phantom.hl.rkt" doc)]

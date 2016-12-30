@@ -5,7 +5,8 @@
                      racket/list
                      (rename-in racket/base [... …]))
          phc-toolkit
-         typed-map)
+         typed-map
+         type-expander)
 
 (define-syntax (gs stx)
   (syntax-case stx ()
@@ -21,11 +22,15 @@
                         [struct struct-field …] …)))]))
 
 (gs bt-fields
-    16
+    512
     (a b c)
     [sab a b]
     [sbc b c]
     [sabc a b c])
+
+;(define-type btac (bt-fields a c))
+
+#|
 
 (check-equal?:
  (~> (ann (with-c (sab→tree 1 2) 'nine)
@@ -74,3 +79,4 @@
   #λ(tree→sbc (without-a (with-c (sab→tree 1 2) 3)))
   list)
  '(2 3))
+|#
