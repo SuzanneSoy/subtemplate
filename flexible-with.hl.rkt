@@ -48,33 +48,62 @@ with a new one.
                   [mod (cadr bits)])
              (define/with-syntax next-id (vector-ref low-names (sub1 next)))
              (if mod
-                 #`(delay/pure/stateless
-                    (let ([tree (force tree-thunk)])
-                      (let ([left-subtree (car tree)]
-                            [right-subtree (cdr tree)])
-                        (cons left-subtree
-                              (force (next-id (delay/pure/stateless right-subtree)
-                                              . replacement?))))))
-                 #`(delay/pure/stateless
-                    (let ([tree (force tree-thunk)])
-                      (let ([left-subtree (car tree)]
-                            [right-subtree (cdr tree)])
-                        (cons (force (next-id (delay/pure/stateless left-subtree)
-                                              . replacement?))
-                              right-subtree)))))))]
+                 #`(replace-right (inst next-id #,@τ*-limited+T-next)
+                                  tree-thunk
+                                  replacement)
+                 #`(replace-left (inst next-id #,@τ*-limited+T-next)
+                                 tree-thunk
+                                 replacement))))]
 
 @CHUNK[<define-replace-in-tree>
+       (: replace-right (∀ (A B C R) (→ (→ (Promise B) R (Promise C))
+                                        (Promise (Pairof A B))
+                                        R
+                                        (Promise (Pairof A C)))))
+       (define-pure/stateless
+         #:∀ (A B C R)
+         (replace-right [next-id : (→ (Promise B) R (Promise C))]
+                        [tree-thunk : (Promise (Pairof A B))]
+                        [replacement : R])
+         (delay/pure/stateless
+          (let ([tree (force tree-thunk)])
+            (let ([left-subtree (car tree)]
+                  [right-subtree (cdr tree)])
+              (cons left-subtree
+                    (force (next-id (delay/pure/stateless right-subtree)
+                                    replacement)))))))
+       (: replace-left (∀ (A B C R) (→ (→ (Promise A) R (Promise C))
+                                       (Promise (Pairof A B))
+                                       R
+                                       (Promise (Pairof C B)))))
+       (define-pure/stateless
+         #:∀ (A B C R)
+         (replace-left [next-id : (→ (Promise A) R (Promise C))]
+                       [tree-thunk : (Promise (Pairof A B))]
+                       [replacement : R])
+         (delay/pure/stateless
+          (let ([tree (force tree-thunk)])
+            (let ([left-subtree (car tree)]
+                  [right-subtree (cdr tree)])
+              (cons (force (next-id (delay/pure/stateless left-subtree)
+                                    replacement))
+                    right-subtree)))))
+
        (define-for-syntax (define-replace-in-tree low-names names rm-names τ* i depth)
          (define/with-syntax name (vector-ref names (sub1 i)))
          (define/with-syntax rm-name (vector-ref rm-names (sub1 i)))
          (define/with-syntax low-name (vector-ref low-names (sub1 i)))
          (define/with-syntax tree-type-with-replacement-name (gensym 'tree-type-with-replacement))
-         (define/with-syntax replacement? #'(replacement))
+         (define/with-syntax tree-replacement-type-name (gensym 'tree-replacement-type))
          (define τ*-limited (take τ* depth))
+         (define τ*-limited+T-next (if (= depth 0)
+                                       (list #'T)
+                                       (append (take τ* (sub1 depth)) (list #'T))))
          #`(begin
              (provide name rm-name)
              (define-type (tree-type-with-replacement-name #,@τ*-limited T)
                (Promise #,(tree-type-with-replacement i #'T τ*-limited)))
+
              (: low-name
                 (∀ (#,@τ*-limited T)
                    (→ (tree-type-with-replacement-name #,@τ*-limited Any)
@@ -94,46 +123,13 @@ with a new one.
                       (tree-type-with-replacement-name #,@τ*-limited (Some T)))))
              (define (name tree-thunk replacement)
                (low-name tree-thunk (Some replacement)))
-             #;(define-pure/stateless
-               #:∀ (#,@τ*-limited T)
-               (name [tree-thunk : (tree-type-with-replacement-name #,@τ*-limited Any)]
-                     [replacement : T])
-               (low-name tree-thunk (Some replacement)))
              
              (: rm-name
                 (∀ (#,@τ*-limited)
                    (→ (tree-type-with-replacement-name #,@τ*-limited (Some Any))
                       (tree-type-with-replacement-name #,@τ*-limited 'NONE))))
              (define (rm-name tree-thunk)
-               (low-name tree-thunk 'NONE))
-             #;(define-pure/stateless
-               #:∀ (#,@τ*-limited)
-               (rm-name [tree-thunk : (tree-type-with-replacement-name #,@τ*-limited (Some Any))])
                (low-name tree-thunk 'NONE))))]
-
-@subsection{Removing fields}
-
-TODO: it would be better to factor this out, and simply choose whether to wrap
-with Some or use 'NONE on the "front-end" side.
-
-@CHUNK[<define-remove-in-tree>
-       (define-for-syntax (define-remove-in-tree names τ* i depth)
-         (define/with-syntax name (vector-ref names (sub1 i)))
-         (define/with-syntax replacement? #'())
-         (define τ*-limited (take τ* depth))
-         #`(begin
-             (provide name)
-             (: name
-                (∀ (#,@τ*-limited T)
-                   (→ (Promise #,(tree-type-with-replacement i #'(Some Any) τ*-limited))
-                      (Promise #,(tree-type-with-replacement i #''NONE τ*-limited)))))
-             (define-pure/stateless
-               #:∀ (#,@τ*-limited T)
-               (name [tree-thunk : (Promise #,(tree-type-with-replacement i #'(Some Any) τ*-limited))])
-               : (Promise #,(tree-type-with-replacement i #''NONE τ*-limited))
-               
-               #,(let ([replacement-thunk #'(delay/pure/stateless 'NONE)])
-                   <make-replace-in-tree-body>))))]
 
 @section{Auxiliary values}
 

@@ -22,7 +22,7 @@
                         [struct struct-field …] …)))]))
 
 (gs bt-fields
-    512
+    257
     (a b c)
     [sab a b]
     [sbc b c]
