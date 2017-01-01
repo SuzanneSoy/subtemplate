@@ -11,7 +11,8 @@
                "srfi-lite-lib"
                "delay-pure"
                "backport-template-pr1514"
-               "typed-map"))
+               "typed-map"
+               "scribble-lib"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
