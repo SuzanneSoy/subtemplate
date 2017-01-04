@@ -7,7 +7,7 @@
 @title[#:style (with-html5 manual-doc-style)
        #:tag "inv-phantom"
        #:tag-prefix "phc-graph/inv-phantom"]{Tracking checked contracts
- via phantom types}
+ via refinement types}
 
 @(chunks-toc-prefix
   '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"
@@ -22,7 +22,7 @@ property is that the @racket[in-method] field of an instruction points back to
 the method containing it. We will use this second property as a running
 example in this section.
 
-@section{Implementation overview}
+@section{Implementation overview : subtyping, variance and phantom types}
 
 It is possible to express with Typed/Racket that a @racket[Method] should
 contain a list of @racket[Instruction]s, and that @racket[Instruction]s should
@@ -50,7 +50,9 @@ We decide to rely instead on a run-time check, i.e. a sort of contract which
 checks the structural invariant on the whole graph. In order to let the
 type-checker know whether a value was checked against that contract or not, we
 include within the node a phantom type which is used as a flag, indicating
-that the graph was checked against that contract.
+that the graph was checked against that contract. This phantom type in a sense
+refines the node type, indicating an additional property (which, in our case,
+is not checked at compile-time but instead enforced at run-time).
 
 @chunk[<invariant-2>
        (struct (Flag) Instruction ([opcode : Byte]
@@ -121,6 +123,14 @@ Another solution is to group the witnesses in an untagged union with
        (define-type At-Least-InvB+InvD
          (→ (U 'InvB 'InvD) Void))]
 
+In the case where no invariant is present in the untagged union, the type
+@racket[(U)] a.k.a @racket[Nothing], the bottom type with no value, would
+appear. This type is somewhat pathological and allows absurd reasoning (a
+function accepting @racket[Nothing] can never be called, which may incite the
+type checker to perform excessive elision). To avoid any pitfalls, we will
+systematically include a dummy element @racket[Or] in the union, to make sure
+the union never becomes empty.
+
 This solution also has the advantage that the size of the run-time witness is
 constant, and does not depend on the number of checked contracts (unlike the
 representation using a list). In practice the function should never be called.
@@ -159,13 +169,198 @@ Finally, we note that the invariants should always be represented using a
 particular struct type, instead of using a symbol, so that name clashes are
 not a problem.
 
-@section{Types for some graph contracts}
+@section{Encoding property implication as subtyping}
 
-@chunk[<structural>
-       (≡ [a : Nd] (get a f1 f2))
-       (∈ [a : Nd] (get a f1 f2))
-       (∉ [a : Nd] (get a f1 f2))
-       (∉ [a : Nd] (get a (* f1 f2 f3 f4) (* f5 f6)))]
+The witness for a strong property should be a subtype of the witness for a
+weaker property. This allows a node with a strong property to be passed where
+a node with a weaker property is passed.
+
+@chunk[<structural-draft>
+       (code:comment "Draft ideas")
+       
+       (struct ∈ ())
+       (struct ≡ ())
+       (struct ∉ ())
+
+       ;(List Rel From Path1 Path2)
+       (List ≡ ANodeName (List f1 f2) (List))
+       (List ∈ ANodeName (List f1 f2) (List))
+       (List ∉ ANodeName (List f1 f2) (List))
+       (List ∉ ANodeName (List (* f1 f2 f3 f4) (* f5 f6)) (List))
+
+       ;(List From Path+Rel)
+       (List ANodeName (List f1 f2 ≡))
+       (List ANodeName (List f1 f2 ∈))
+       (List ANodeName (List f1 f2 ∉))
+       (List ANodeName (List (List f1 ∉)
+                             (List f2 ∉)
+                             (List f3 ∉)
+                             (List f4
+                                   (List f5 ∉)
+                                   (List f6 ∉))))
+       
+       ;; How to make it have the right kind of subtyping?
+
+       
+       ]
+
+@subsection{Properties applying to all reachable nodes from @racket[x]}
+
+The property @racket[x ≢ x.**] can be expanded to a series of properties. For
+example, if @racket[x] has two fields @racket[a] and @racket[d], the former
+itself having two fields @racket[b] and @racket[c], and the latter having a
+field @racket[e], itself with a field @racket[f]:
+@chunk[<expanded-path-set>
+       (x ≢ x.a)
+       (x ≢ x.a.b)
+       (x ≢ x.a.c)
+       (x ≢ x.d)
+       (x ≢ x.d.e)
+       (x ≢ x.d.e.f)]
+
+@subsection{Prefix trees to the rescue}
+
+This expanded representation is however costly, and can be expressed more
+concisely by factoring out the prefixes.
+
+@chunk[<prefixes>
+       (x ≢ (x (a (b) (c))
+               (d (e (f)))))]
+
+One thing which notably cannot be represented concisely in this way is
+@racket[x.a.** ≢ x.b.**], meaning that the subgraphs rooted at @racket[x.a]
+and @racket[x.b] are disjoint. It would be possible to have a representation
+combining a prefix-tree on the left, and a prefix-tree on the right, implying
+the cartesian product of both sets of paths. This has a negligible cost in the
+size of the type for the case where one of the members of the cartesian
+product, as we end up with the following (the left-hand-side @racket[x] gains
+an extra pair of parentheses, because it is now an empty tree):
+
+@chunk[<prefixes>
+       ((x) ≢ (x (a (b) (c))
+                 (d (e (f)))))]
+
+This does not allow concise expression of all properties, i.e. this is a form
+of compression, which encodes concisely likely sets of pairs of paths, but is
+of little help for more random properties. For example, if a random subset of
+the cartesian product of reachable paths is selected, there is no obvious way
+to encode it in a significantly more concise way than simply listing the pairs
+of paths one by one.
+
+@subsection{Cycles in properties}
+
+If a @racket[**] path element (i.e. a set of paths representing any path of
+any length) corresponds to a part of the graph which contains a cycle in the
+type, it is necessary to make that cycle appear in the expanded form. For
+that, we use @racket[Rec]. Supposing that the node @racket[x] has two fields,
+@racket[a] and @racket[c], the first itself having a field @racket[b] of type
+@racket[x]. We would expand @racket[x.**] to the following shape:
+
+@racket[(Rec X (≢ (Node0 'x)
+                  (Node2 'x
+                         (Field1 'a (Field1 'b (Field1 X)))
+                         (Field1 'c))))]
+
+If one of the fields refers not to the root, but to 
+
+TODO: distinction between root nodes and fields in the path. Add an @racket[ε]
+component at the root of each path?
+
+@subsection{Partial paths}
+
+Partial paths: if a property holds between @racket[x.a] and @racket[x.b], then
+it is stronger than a property which holds between @racket[y.fx.a] and
+@racket[y.fx.b] (i.e. the common prefix path narrows down the set of pairs of
+values which are related by the property).
+
+A possible solution idea: mask the "beginning" of the path with a @racket[∀]
+or @racket[Any]. Either use
+@racket[(Rec Ign (U (Field1 Any Ign) Actual-tail-of-type))], or reverse the
+``list'', so that one writes @racket[(Field1 'b (Field1 'a Any))], i.e. we
+have @racket[(Field1 field-name up)] instead of
+@racket[(Field1 field-name children)]. The problem with the reversed version
+is that two child fields @racket[b] and @racket[c] need to refer to the same
+parent @racket[a], which leads to duplication or naming (in the case of
+naming, Typed/Racket tends to perform some inlining anyway, except if tricks
+are used to force the type to be recursive (in which case the subtyping / type
+matching is less good and fails to recognise weaker or equivalent formulations
+of the type)). The problem with the @racket[Rec] solution for an ignored head
+of any length is that the number of fields is not known in advance (but
+hopefully our representation choices to allow weaker properties with missing
+fields could make this a non-problem?).
+
+@subsection{Array and list indices}
+
+When a path reaches an array, list, set or another similar collection, the
+special path element @racket[*] can be used to indicate ``any element in the
+array or list''. Specific indices can be indicated by an integer, or for lists
+with @racket[car], @racket[first], @racket[second], @racket[third] and so on.
+The special path elements @racket[cdr] and @racket[rest] access the rest of
+the list, i.e. everything but the first element.
+
+@subsection{Other richer properties}
+
+Other richer properties can be expressed, like
+@racket[x.len = (length x.somelist)]. This property calls some racket
+primitives (@racket[length]), and compares numeric values. However, we do not
+attempt to make the type checker automatically recognise weaker or equivalent
+properties. Instead, we simply add to the phantom type a literal description
+of the checked property, which will only match the same exact property.
+
+@section{Implementation}
+
+@subsection{The witness value}
+
+Since all witnesses will have a type of the form
+@racket[(→ (U (→ invᵢ Void) …) Void)], they can all be represented at run-time
+by a single value: a function accepting any argument and returning
+@racket[Void]. Note that the type of the witness is normally a phantom type,
+and an actual value is supplied only because Typed/Racket drops phantom types
+before typechecking, as mentioned earlier.
+
+@chunk[<witness-value>
+       (: witness-value (→ Any Void))
+       (define witness-value (λ (x) (void)))]
+
+@subsection{Grouping multiple invariants}
+
+As mentioned earlier, we group invariants together using an untagged union
+@racket[U], which must appear in a contravariant position. We wish to express
+witnesses for stronger invariants as subtypes of witnesses for weaker
+invariants, and therefore use a second nested function type to flip again the
+variance direction. We always include the Or element in the union, to avoid
+having an empty union.
+
+@chunk[<grouping-invariants>
+       (struct Or ())
+       (define-type-expander (Invariants stx)
+         (syntax-case stx ()
+           [(_ invᵢ …)
+            #'(→ (U Or (→ invᵢ Void) …) Void)]))]
+
+@subsection{Structural (in)equality and (non-)membership invariants}
+
+@subsubsection{Comparison operator tokens}
+
+We define some tokens which will be used to identify the operator which
+relates two nodes in the graph.
+
+@chunk[<comparison-operators>
+       (struct ≡ ())
+       (struct ≢ ())
+       (struct ∈ ())
+       (struct ∉ ())]
+
+@subsection{Putting it all together}
 
 @chunk[<*>
+       (require (for-syntax phc-toolkit))
+       
+       <witness-value>
+       <grouping-invariants>
+       <comparison-operators>
+
+       (code:comment "Tests:")
+       (ann witness-value (Invariants)) ;; No invariants
+
        (void)]
