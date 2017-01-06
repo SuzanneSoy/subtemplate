@@ -1,14 +1,14 @@
-<!-- Tufts VUE 3.3.0 concept-map (Graph-notes-copy2.vue) 2016-12-30 -->
+<!-- Tufts VUE 3.3.0 concept-map (Graph-notes-copy2.vue) 2017-01-05 -->
 <!-- Tufts VUE: http://vue.tufts.edu/ -->
 <!-- Do Not Remove: VUE mapping @version(1.1) jar:file:/nix/store/z92y35qgs6g3cvvh0i4f14mg5n47zvvi-vue-3.3.0/share/vue/vue.jar!/tufts/vue/resources/lw_mapping_1_1.xml -->
-<!-- Do Not Remove: Saved date Fri Dec 30 22:07:05 CET 2016 by georges on platform Linux 4.4.38 in JVM 1.8.0_122-04 -->
+<!-- Do Not Remove: Saved date Thu Jan 05 00:59:01 CET 2017 by georges on platform Linux 4.4.38 in JVM 1.8.0_122-04 -->
 <!-- Do Not Remove: Saving version @(#)VUE: built October 8 2015 at 1724 by tomadm on Linux 2.6.32-504.23.4.el6.x86_64 i386 JVM 1.7.0_21-b11(bits=32) -->
 <?xml version="1.0" encoding="US-ASCII"?>
 <LW-MAP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="none" ID="0"
     label="Graph-notes-copy2.vue" created="1479309847604" x="0.0"
     y="0.0" width="1.4E-45" height="1.4E-45" strokeWidth="0.0" autoSized="false">
-    <resource referenceCreated="1483132025205" size="204773"
+    <resource referenceCreated="1483574341626" size="204773"
         spec="/home/georges/phc/racket-packages/phc-graph/Graph-notes-copy2.vue"
         type="1" xsi:type="URLResource">
         <title>Graph-notes-copy2.vue</title>
