@@ -346,10 +346,20 @@ We define some tokens which will be used to identify the operator which
 relates two nodes in the graph.
 
 @chunk[<comparison-operators>
-       (struct ≡ ())
-       (struct ≢ ())
-       (struct ∈ ())
-       (struct ∉ ())]
+       (struct (A B) inv≡ ([a : A] [b : B]))
+       (struct (A B) inv≢ ([a : A] [b : B]))
+       ;(struct inv∈ ()) ;; Can be expressed in terms of ≡
+       ;(struct inv∉ ()) ;; Can be expressed in terms of ≢
+       ]
+
+@chunk[<≡>
+       (define-type-expander (≡ stx)
+         (syntax-case stx ()
+           [(_ (patha ...) (pathb ...))
+            ;; TODO: probably not just List here, have to think.
+            #'(inv≡ (List 'patha ...) (List 'pathb ...))]))]
+
+@; TODO: don't forget to include both directions a = b and b = a (or sort the fields?)
 
 @subsection{Putting it all together}
 
@@ -359,8 +369,10 @@ relates two nodes in the graph.
        <witness-value>
        <grouping-invariants>
        <comparison-operators>
+       <≡>
 
        (code:comment "Tests:")
        (ann witness-value (Invariants)) ;; No invariants
-
+       (ann witness-value (Invariants (≡ (a) (a b c)))) ;; No invariants
+       
        (void)]
