@@ -363,6 +363,14 @@ relates two nodes in the graph.
 
 @subsection{Putting it all together}
 
+@chunk[<check-a-stronger-b>
+       (define-syntax (check-a-stronger-or-same-b stx)
+         (syntax-case stx ()
+           [(_ stronger weaker)
+            (syntax/top-loc stx
+              (check-ann (ann witness-value stronger)
+                         weaker))]))]
+
 @chunk[<*>
        (require (for-syntax phc-toolkit))
        
@@ -371,8 +379,17 @@ relates two nodes in the graph.
        <comparison-operators>
        <≡>
 
-       (code:comment "Tests:")
-       (ann witness-value (Invariants)) ;; No invariants
-       (ann witness-value (Invariants (≡ (a) (a b c)))) ;; No invariants
-       
-       (void)]
+       (module+ test
+         (require phc-toolkit)
+         <check-a-stronger-b>
+         
+         (ann witness-value (Invariants)) ;; No invariants
+         (ann witness-value (Invariants (≡ (a) (a b c))))
+
+         (check-a-stronger-or-same-b (Invariants (≡ (a) (a b c)))
+                                     (Invariants))
+
+         (check-a-stronger-or-same-b (Invariants (≡ (a) (a b c)) (≡ (a) (a b d)))
+                                     (Invariants (≡ (a) (a b c))))
+         (check-a-stronger-or-same-b (Invariants (≡ (a) (a b d)) (≡ (a) (a b c)))
+                                     (Invariants (≡ (a) (a b c)))))]
