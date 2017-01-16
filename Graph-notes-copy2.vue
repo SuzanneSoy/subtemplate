@@ -1,14 +1,14 @@
-<!-- Tufts VUE 3.3.0 concept-map (Graph-notes-copy2.vue) 2017-01-05 -->
+<!-- Tufts VUE 3.3.0 concept-map (Graph-notes-copy2.vue) 2017-01-16 -->
 <!-- Tufts VUE: http://vue.tufts.edu/ -->
 <!-- Do Not Remove: VUE mapping @version(1.1) jar:file:/nix/store/z92y35qgs6g3cvvh0i4f14mg5n47zvvi-vue-3.3.0/share/vue/vue.jar!/tufts/vue/resources/lw_mapping_1_1.xml -->
-<!-- Do Not Remove: Saved date Thu Jan 05 00:59:01 CET 2017 by georges on platform Linux 4.4.38 in JVM 1.8.0_122-04 -->
+<!-- Do Not Remove: Saved date Mon Jan 16 01:54:56 CET 2017 by georges on platform Linux 4.4.38 in JVM 1.8.0_122-04 -->
 <!-- Do Not Remove: Saving version @(#)VUE: built October 8 2015 at 1724 by tomadm on Linux 2.6.32-504.23.4.el6.x86_64 i386 JVM 1.7.0_21-b11(bits=32) -->
 <?xml version="1.0" encoding="US-ASCII"?>
 <LW-MAP xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="none" ID="0"
     label="Graph-notes-copy2.vue" created="1479309847604" x="0.0"
     y="0.0" width="1.4E-45" height="1.4E-45" strokeWidth="0.0" autoSized="false">
-    <resource referenceCreated="1483574341626" size="204773"
+    <resource referenceCreated="1484528096110" size="208901"
         spec="/home/georges/phc/racket-packages/phc-graph/Graph-notes-copy2.vue"
         type="1" xsi:type="URLResource">
         <title>Graph-notes-copy2.vue</title>
@@ -314,9 +314,9 @@
         <ID2 xsi:type="node">36</ID2>
     </child>
     <child ID="42"
-        label="Cache all calls to equal? while grouping nodes"
+        label="Cache all calls to equal? and equal-hash-code and equal-secondary-hash-code while grouping nodes"
         layerID="1" created="1479310644302" x="1518.7698" y="1259.8262"
-        width="315.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        width="681.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#F2AE45</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
@@ -988,7 +988,7 @@
     <child ID="195" label=" " layerID="1" created="1479312165108"
         x="-862.1742" y="400.12408" width="97.0" height="23.0"
         strokeWidth="1.0" autoSized="false" xsi:type="node">
-        <fillColor>#C1F780</fillColor>
+        <fillColor>#FFFFFF</fillColor>
         <strokeColor>#D0D0D0</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -1352,9 +1352,9 @@
         <ID1 xsi:type="node">11</ID1>
         <ID2 xsi:type="node">241</ID2>
     </child>
-    <child ID="244" label="&#x3b1;-equivalence" layerID="1"
+    <child ID="244" label="&#x3b1;-equivalence normal form" layerID="1"
         created="1479314913291" x="1434.1376" y="1005.7449"
-        width="104.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        width="184.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
@@ -1362,21 +1362,21 @@
         <URIString>http://vue.tufts.edu/rdf/resource/6e0b664b43a6be970d2ffe25608d7f84</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="245" layerID="1" created="1479314913294" x="1409.2081"
-        y="956.80304" width="62.766357" height="49.441895"
+    <child ID="245" layerID="1" created="1479314913294" x="1415.6469"
+        y="956.803" width="89.88867" height="49.441833"
         strokeWidth="1.0" autoSized="false" controlCount="0"
         arrowState="2" xsi:type="link">
         <strokeColor>#000000</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/6e0b664b43a6be970d2ffe252aafd35e</URIString>
-        <point1 x="1409.7081" y="957.30304"/>
-        <point2 x="1471.4745" y="1005.74493"/>
+        <point1 x="1416.1469" y="957.30304"/>
+        <point2 x="1505.0355" y="1005.7449"/>
         <ID1 xsi:type="node">11</ID1>
         <ID2 xsi:type="node">244</ID2>
     </child>
     <child ID="246" label="Too hard to implement for now" layerID="1"
-        created="1479314956001" x="1417.3375" y="1043.5447"
+        created="1479314956001" x="1452.3375" y="1052.5447"
         width="210.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
@@ -1385,22 +1385,22 @@
         <URIString>http://vue.tufts.edu/rdf/resource/6e0b664c43a6be970d2ffe253b42a8fa</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="247" layerID="1" created="1479314956003" x="1496.6509"
-        y="1028.2449" width="15.17334" height="15.799805"
+    <child ID="247" layerID="1" created="1479314956003" x="1533.3042"
+        y="1028.2449" width="16.866577" height="24.799805"
         strokeWidth="1.0" autoSized="false" controlCount="0"
         arrowState="2" xsi:type="link">
         <strokeColor>#000000</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/6e0b664c43a6be970d2ffe25426d76fa</URIString>
-        <point1 x="1497.1509" y="1028.7449"/>
-        <point2 x="1511.3242" y="1043.5447"/>
+        <point1 x="1533.8043" y="1028.7449"/>
+        <point2 x="1549.6709" y="1052.5447"/>
         <ID1 xsi:type="node">244</ID1>
         <ID2 xsi:type="node">246</ID2>
     </child>
     <child ID="252"
         label="http://docs.racket-lang.org/graph/index.html#%28def._%28%28lib._graph%2Fmain..rkt%29._coloring%2Fgreedy%29%29"
-        layerID="1" created="1479315385244" x="872.13745" y="-11.855225"
+        layerID="1" created="1479315385244" x="436.13745" y="60.144775"
         width="784.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#F2AE45</fillColor>
         <strokeColor>#776D6D</strokeColor>
@@ -1409,16 +1409,15 @@
         <URIString>http://vue.tufts.edu/rdf/resource/6e12548843a6be970d2ffe259bb5e939</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="253" layerID="1" created="1479315385245" x="1270.5393"
-        y="10.644775" width="34.10388" height="56.158203"
-        strokeWidth="1.0" autoSized="false" controlCount="0"
-        arrowState="2" xsi:type="link">
+    <child ID="253" layerID="1" created="1479315385245" x="1218.9329"
+        y="76.13478" width="60.11206" height="1.75383" strokeWidth="1.0"
+        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
         <strokeColor>#000000</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/6e12548843a6be970d2ffe25f25ed174</URIString>
-        <point1 x="1304.1432" y="66.30298"/>
-        <point2 x="1271.0393" y="11.144775"/>
+        <point1 x="1278.5449" y="77.38861"/>
+        <point2 x="1219.4329" y="76.63478"/>
         <ID1 xsi:type="node">23</ID1>
         <ID2 xsi:type="node">252</ID2>
     </child>
@@ -1475,7 +1474,7 @@
     <child ID="262" label=" " layerID="1" created="1479315626294"
         x="-689.56244" y="438.0868" width="97.0" height="23.0"
         strokeWidth="1.0" autoSized="false" xsi:type="node">
-        <fillColor>#FFFFFF</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#D0D0D0</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -1699,7 +1698,7 @@
         label="Each node has an extra field of the following type:&#xa;"
         layerID="1" created="1479317112254" x="-826.86255" y="972.24475"
         width="339.0" height="107.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -1760,7 +1759,7 @@
         label="Use a private struct to prevent forging of the invariants aggregated in a case&#x2192;&#xa;(since it is never executed, any non-terminating &#x3bb; could otherwise be supplied).&#xa;"
         layerID="1" created="1479317202233" x="-960.86255" y="1145.7448"
         width="531.0" height="77.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -1814,7 +1813,7 @@
         label="graph invariants should only define the dummy type used to identify them"
         layerID="1" created="1479317586757" x="-968.86255" y="1282.7448"
         width="611.0" height="172.25" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -1902,7 +1901,7 @@
         label="The returned type may contain symbols, to indicate node names and field names,&#xa;and will contain a reference to a private struct type, so that&#xa;two invariants with the same name defined in separate won't conflict"
         layerID="1" created="1479317996531" x="-1558.8625" y="1375.2448"
         width="543.0" height="53.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#F2AE45</fillColor>
+        <fillColor>#C1F780</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2175,7 +2174,7 @@
         <ID2 xsi:type="node">353</ID2>
     </child>
     <child ID="355" label="Too hard to implement for now" layerID="1"
-        created="1479341061597" x="1677.9707" y="128.74475"
+        created="1479341061597" x="1622.9707" y="-37.25525"
         width="210.0" height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#A6A6A6</fillColor>
         <strokeColor>#776D6D</strokeColor>
@@ -2184,15 +2183,16 @@
         <URIString>http://vue.tufts.edu/rdf/resource/6f9963d1c0a80026616d9239f16e4b43</URIString>
         <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
     </child>
-    <child ID="356" layerID="1" created="1479341061598" x="1613.4707"
-        y="140.18779" width="65.0" height="1.27005" strokeWidth="1.0"
-        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+    <child ID="356" layerID="1" created="1479341061598" x="1558.0037"
+        y="-14.755249" width="157.93408" height="145.0"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
         <strokeColor>#404040</strokeColor>
         <textColor>#404040</textColor>
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/6f9963d1c0a80026616d923937836369</URIString>
-        <point1 x="1613.9707" y="140.95784"/>
-        <point2 x="1677.9707" y="140.68779"/>
+        <point1 x="1558.5037" y="129.74475"/>
+        <point2 x="1715.4377" y="-14.255249"/>
         <ID1 xsi:type="node">353</ID1>
         <ID2 xsi:type="node">355</ID2>
     </child>
@@ -2345,7 +2345,7 @@
         label="What about invariants?&#xa;* Just copy them over syntactically?&#xa;* Require that they are re-specified&#xa;(at least by explicitly copying them by their name)"
         layerID="1" created="1479346589797" x="788.9707" y="332.74475"
         width="329.0" height="68.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
-        <fillColor>#DD7B11</fillColor>
+        <fillColor>#F2AE45</fillColor>
         <strokeColor>#776D6D</strokeColor>
         <textColor>#000000</textColor>
         <font>SansSerif-plain-12</font>
@@ -2628,7 +2628,7 @@
         <ctrlPoint0 x="1464.6375" y="1218.2448" xsi:type="point"/>
     </child>
     <child ID="410" layerID="1" created="1479388143803" x="1399.9028"
-        y="1172.803" width="119.48682" height="96.929565"
+        y="1172.803" width="119.57471" height="96.49426"
         strokeWidth="1.0" autoSized="false" controlCount="1"
         arrowState="2" xsi:type="link">
         <strokeColor>#000000</strokeColor>
@@ -2636,7 +2636,7 @@
         <font>SansSerif-plain-11</font>
         <URIString>http://vue.tufts.edu/rdf/resource/72688d2cc0a8002633539faacb736715</URIString>
         <point1 x="1400.4028" y="1173.303"/>
-        <point2 x="1518.8896" y="1269.2325"/>
+        <point2 x="1518.9775" y="1268.7972"/>
         <ID1 xsi:type="node">25</ID1>
         <ID2 xsi:type="node">42</ID2>
         <ctrlPoint0 x="1444.6375" y="1268.2448" xsi:type="point"/>
@@ -3470,7 +3470,7 @@
         <ID2 xsi:type="node">512</ID2>
     </child>
     <child ID="514"
-        label="Problem: how do we make the field accessors &quot;hyb&#xa;id&quot;, i.e. working both on fixed records and flex records?&#xa;We don't want nested field accesses to build up a tower of U types,&#xa;which makes acceesses very costly for the typechecker"
+        label="Problem: how do we make the field accessors &quot;hybrid&quot;,&#xa;i.e. working both on fixed records and flex records?&#xa;We don't want nested field accesses to build up a tower of U types,&#xa;which makes acceesses very costly for the typechecker"
         layerID="1" created="1482936685798" x="3909.6375" y="310.24475"
         width="454.0" height="68.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
         <fillColor>#FC938D</fillColor>
@@ -3708,12 +3708,82 @@
         <ID1 xsi:type="node">103</ID1>
         <ID2 xsi:type="node">535</ID2>
     </child>
+    <child ID="538" label="i.e. a lens" layerID="1"
+        created="1484518582413" x="3000.6375" y="699.74475" width="76.0"
+        height="23.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#E6F7FD</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/a46d8f60c0a801286acbb58b97c6fd0a</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="539" layerID="1" created="1484518582423" x="3055.4656"
+        y="673.2446" width="40.17627" height="27.000122"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-11</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/a46d8f61c0a801286acbb58b996c697e</URIString>
+        <point1 x="3095.1418" y="673.7446"/>
+        <point2 x="3055.9656" y="699.74475"/>
+        <ID1 xsi:type="node">393</ID1>
+        <ID2 xsi:type="node">538</ID2>
+    </child>
+    <child ID="540"
+        label="Could be implemented using the function-updating-binarry-tree trick&#xa;Start from a tree with all positions filled with an empty vector (can be implemented as a single &quot;base&quot; function)&#xa;and then &quot;cons&quot; the non-empty vectors, effectively hiding the empty ones"
+        layerID="1" created="1484520835681" x="983.63745" y="-145.25525"
+        width="730.0" height="53.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#F2AE45</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/a46d8f61c0a801286acbb58b2b628a00</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="541" layerID="1" created="1484520835688" x="1368.2502"
+        y="-92.75525" width="169.49231" height="223.00012"
+        strokeWidth="1.0" autoSized="false" controlCount="0"
+        arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-11</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/a46d8f62c0a801286acbb58b19d6b212</URIString>
+        <point1 x="1537.2426" y="129.74487"/>
+        <point2 x="1368.7502" y="-92.25525"/>
+        <ID1 xsi:type="node">353</ID1>
+        <ID2 xsi:type="node">540</ID2>
+    </child>
+    <child ID="542"
+        label="O(1) memory overhead for each type which is live within an SCC&#xa;O(m) time overhead for access, m being the number of SCCs to traverse before reaching the desired node from its ancestor&#xa;The O(m) factor can probably be turned into a O(log m) with a bit of extra space usage"
+        layerID="1" created="1484521031023" x="926.63745" y="-235.25525"
+        width="825.0" height="53.0" strokeWidth="1.0" autoSized="true" xsi:type="node">
+        <fillColor>#F2AE45</fillColor>
+        <strokeColor>#776D6D</strokeColor>
+        <textColor>#000000</textColor>
+        <font>SansSerif-plain-12</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/a46d8f62c0a801286acbb58beacd7655</URIString>
+        <shape arcwidth="20.0" archeight="20.0" xsi:type="roundRect"/>
+    </child>
+    <child ID="543" layerID="1" created="1484521031026" x="1341.4347"
+        y="-182.75488" width="4.9055176" height="38.0" strokeWidth="1.0"
+        autoSized="false" controlCount="0" arrowState="2" xsi:type="link">
+        <strokeColor>#404040</strokeColor>
+        <textColor>#404040</textColor>
+        <font>SansSerif-plain-11</font>
+        <URIString>http://vue.tufts.edu/rdf/resource/a46d8f62c0a801286acbb58b90bacc82</URIString>
+        <point1 x="1345.8402" y="-145.25488"/>
+        <point2 x="1341.9347" y="-182.25488"/>
+        <ID1 xsi:type="node">540</ID1>
+        <ID2 xsi:type="node">542</ID2>
+    </child>
     <layer ID="1" label="Layer 1" created="1479309847607" x="0.0"
         y="0.0" width="1.4E-45" height="1.4E-45" strokeWidth="0.0" autoSized="false">
         <URIString>http://vue.tufts.edu/rdf/resource/6dbf6b15c0a80026548592b8d2f3fee2</URIString>
     </layer>
     <userZoom>1.0</userZoom>
-    <userOrigin x="-1829.3625" y="-403.75525"/>
+    <userOrigin x="-1656.3625" y="-636.75525"/>
     <presentationBackground>#FFFFFF</presentationBackground>
     <PathwayList currentPathway="0" revealerIndex="-1">
         <pathway ID="0" label="Chemin sans nom" created="1479309847603"

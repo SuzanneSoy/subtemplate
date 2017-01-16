@@ -141,8 +141,8 @@ In addition to testifying that a graph node was checked against multiple,
 separate contracts, there might be some contracts which check stronger
 properties than others. A way to encode this relationship in the type system
 is to have subtyping relationships between the contract witnesses, so that
-@; TODO: get rid of the mathit
-@${\mathit{P}₁(x) ⇒ \mathit{P}₂(x) ⇒ \mathit{Inv}₁ @texsubtype \mathit{Inv}₂}:
+@; TODO: get rid of the textit
+@${\textit{P}₁(x) ⇒ \textit{P}₂(x) ⇒ \textit{Inv}₁ @texsubtype \textit{Inv}₂}:
 
 @chunk[<invariant-contract-subtyping>
        (struct InvWeak ())
@@ -336,7 +336,8 @@ having an empty union.
        (define-type-expander (Invariants stx)
          (syntax-case stx ()
            [(_ invᵢ …)
-            #'(→ (U Or (→ invᵢ Void) …) Void)]))]
+            #'(→ (U Or (→ invᵢ Void) …) Void)
+            #;#'(→ (→ (∩ invᵢ …) Void) Void)]))]
 
 @subsection{Structural (in)equality and (non-)membership invariants}
 
@@ -346,20 +347,87 @@ We define some tokens which will be used to identify the operator which
 relates two nodes in the graph.
 
 @chunk[<comparison-operators>
-       (struct (A B) inv≡ ([a : A] [b : B]))
-       (struct (A B) inv≢ ([a : A] [b : B]))
+       (struct (A) inv≡ ([a : A]))
+       (struct (A) inv≢ ([a : A]))
        ;(struct inv∈ ()) ;; Can be expressed in terms of ≡
        ;(struct inv∉ ()) ;; Can be expressed in terms of ≢
        ]
 
-@chunk[<≡>
-       (define-type-expander (≡ stx)
-         (syntax-case stx ()
-           [(_ (patha ...) (pathb ...))
-            ;; TODO: probably not just List here, have to think.
-            #'(inv≡ (List 'patha ...) (List 'pathb ...))]))]
+@CHUNK[<≡>
+       (define-for-syntax (relation inv)
+         (syntax-parser
+           [(_ (pre-a … {~literal _} post-a …)
+               (pre-b … {~literal _} post-b …))
+            #:with (r-pre-a …) (reverse (syntax->list #'(pre-a …)))
+            #:with (r-pre-b …) (reverse (syntax->list #'(pre-b …)))
+            ;; Use U to make it order-independent
+            #`(#,inv (U (Pairof (Cycle r-pre-a …)
+                                (Cycle post-a …))
+                        (Pairof (Cycle r-pre-b …)
+                                (Cycle post-b …))))]))
 
-@; TODO: don't forget to include both directions a = b and b = a (or sort the fields?)
+       (define-type-expander ≡ (relation #'inv≡))
+       (define-type-expander ≢ (relation #'inv≢))]
+
+@chunk[<cycles>
+       (struct ε () #:transparent)
+       (struct (T) Target () #:transparent)
+       (struct (T) NonTarget Target ([x : T]) #:transparent)
+       
+       (define-type-expander Cycle
+         (syntax-parser
+           [(_ field:id … {~literal ↙} loop1:id … (target:id) loop2:id …)
+            #'(List* (NonTarget ε)
+                     (NonTarget 'field) …
+                     (Rec R (List* (NonTarget 'loop1) … ;(NonTarget 'loop1) …
+                                   (Target 'target) ;(NonTarget 'target)
+                                   (NonTarget 'loop2) … ;(NonTarget 'loop2) …
+                                   R)))]
+           [(_ field … target)
+            ;; TODO: something special at the end?
+            #'(List (NonTarget ε) (NonTarget 'field) … (Target 'target))]
+           [(_)
+            #'(List (Target ε))]))]
+
+@;{@[
+   
+ ;.a.b = .x.y
+ ;(l1=a ∧ l2=b ∧ r1=x ∧ r2=y) ⇒ eq
+ ;¬(l1=a ∧ l2=b ∧ r1=x ∧ r2=y) ∨ eq
+ ;¬l1=a ∨ ¬l2=b ∨ ¬r1=x ∨ ¬r2=y ∨ eq
+
+ ;.a.c = .x.y
+ ;(l1=a ∧ l2=c ∧ r1=x ∧ r2=y) ⇒ eq
+
+ ;.a.c = .x.z
+ ;(l1=a ∧ l2=b ∧ r1=x ∧ r2=z) ⇒ eq
+ ;¬l1=a ∨ ¬l2=b ∨ ¬r1=x ∨ ¬r2=z ∨ eq
+
+
+ ;.a.b = .x.y ∧ .a.c = .x.z
+ ;(¬l1=a ∨ ¬l2=b ∨ ¬r1=x ∨ ¬r2=y ∨ eq) ∧ (¬l1=a ∨ ¬l2=b ∨ ¬r1=x ∨ ¬r2=z ∨ eq)
+ ;¬¬(¬l1=a ∨ ¬l2=b ∨ ¬r1=x ∨ ¬r2=y ∨ eq) ∧ (¬l1=a ∨ ¬l2=b ∨ ¬r1=x ∨ ¬r2=z ∨ eq)
+ ;¬(l1=a ∧ l2=b ∧ r1=x ∧ r2=y ∧ eq) ∨ (l1=a ∧ l2=b ∧ r1=x ∧ r2=z ∧ ¬eq)
+ ]}
+
+@; Problem with ∩: it factors out too much, (∩ '(a . b) '(a . c) '(x . b))
+@; becomes (Pairof (∩ 'a 'x) (∩ 'b 'c)), which is equivalent to have all four
+@; elements of {a,x} × {b,c}, but we only want three out of these four.
+
+Two sorts of paths inside (in)equality constraints:
+
+@itemlist[
+ @item{those anchored on a node, stating that
+  @$${
+   ∀\ \textit{node} : \textit{NodeType},\quad
+   \textit{node}.\textit{path}₁ ≡ \textit{node}.\textit{path}₂}}
+ @item{those not anchored on a node, stating that
+  @$${
+   \begin{array}{c}
+   ∀\ \textit{node}₁ : \textit{NodeType}₁,\quad
+   ∀\ \textit{node}₂ : \textit{NodeType}₂,\\
+   \textit{node}₁.\textit{path}₁ ≡ \textit{node}₂.\textit{path}₂
+   \end{array}}}]
 
 @subsection{Putting it all together}
 
@@ -369,27 +437,47 @@ relates two nodes in the graph.
            [(_ stronger weaker)
             (syntax/top-loc stx
               (check-ann (ann witness-value stronger)
-                         weaker))]))]
+                         weaker))]))
+       
+       (define-syntax (check-a-same-b stx)
+         (syntax-case stx ()
+           [(_ a b)
+            (syntax/top-loc stx
+              (begin
+                (check-ann (ann witness-value a) b)
+                (check-ann (ann witness-value b) a)))]))]
 
 @chunk[<*>
-       (require (for-syntax phc-toolkit))
+       (require (for-syntax phc-toolkit/untyped
+                            syntax/parse))
        
        <witness-value>
        <grouping-invariants>
+       <cycles>
        <comparison-operators>
        <≡>
 
        (module+ test
          (require phc-toolkit)
          <check-a-stronger-b>
-         
-         (ann witness-value (Invariants)) ;; No invariants
-         (ann witness-value (Invariants (≡ (a) (a b c))))
 
-         (check-a-stronger-or-same-b (Invariants (≡ (a) (a b c)))
+         (ann witness-value (Invariants)) ;; No invariants
+         (ann witness-value (Invariants (≡ (_ a) (_ a b c))))
+
+         (check-a-stronger-or-same-b (Invariants (≡ (_ a) (_ a b c)))
                                      (Invariants))
 
-         (check-a-stronger-or-same-b (Invariants (≡ (a) (a b c)) (≡ (a) (a b d)))
-                                     (Invariants (≡ (a) (a b c))))
-         (check-a-stronger-or-same-b (Invariants (≡ (a) (a b d)) (≡ (a) (a b c)))
-                                     (Invariants (≡ (a) (a b c)))))]
+         (check-a-same-b (Invariants (≡ (_ a) (_ a b c)))
+                         (Invariants (≡ (_ a b c) (_ a))))
+
+         (check-a-stronger-or-same-b (Invariants (≡ (_) (_ b c))
+                                                 (≡ (_) (_ b d)))
+                                     (Invariants (≡ (_) (_ b c))))
+         (check-a-stronger-or-same-b (Invariants (≡ (_) (_ b d))
+                                                 (≡ (_) (_ b c)))
+                                     (Invariants (≡ (_) (_ b c))))
+
+         (check-a-stronger-or-same-b (Invariants (≡ (_)
+                                                    (_ b d a b d ↙ a b (d))))
+                                     (Invariants (≡ (_)
+                                                    (_ b d ↙ a b (d))))))]

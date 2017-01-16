@@ -1,6 +1,6 @@
 #lang aful/unhygienic hyper-literate type-expander/lang
 
-@title[#;#:style #;(with-html5 manual-doc-style)
+@title[#:style manual-doc-style ;#:style (with-html5 manual-doc-style)
        #:tag "flexible-with"
        #:tag-prefix "phc-graph/flexible-with"]{Flexible functional
  modification and extension of records}

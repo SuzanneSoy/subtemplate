@@ -2,12 +2,14 @@
 
 @(require scribble-math)
 
-@title[#:style manual-doc-style]{Utility math functions for binary tree
+@title[#:tag-prefix "utils"
+       #:style manual-doc-style]{Utility math functions for binary tree
  manipulation}
 
 @(chunks-toc-prefix
   '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"
-    "phc-graph/flexible-with"))
+    "phc-graph/flexible-with"
+    "utils"))
 
 @defmodule[(lib "phc-graph/flexible-with-utils.hl.rkt")]
 

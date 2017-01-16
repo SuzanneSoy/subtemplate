@@ -25,7 +25,7 @@
 @title[#:style manual-doc-style
        #:tag "traversal"
        #:tag-prefix "phc-graph/traversal"]{Parametric replacement of parts of
- data structures, identified by their type}
+ data structures}
 
 @(chunks-toc-prefix
   '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"
