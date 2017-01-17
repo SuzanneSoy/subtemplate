@@ -1,5 +1,6 @@
 #lang hyper-literate typed/racket/base #:no-auto-require
-@(require racket/require
+@(require scribble-math
+          racket/require
           scribble-enhanced/doc
           racket/require
           hyper-literate
@@ -19,6 +20,15 @@
 @(unless-preexpanding
   (require (for-label (submod ".."))))
 @doc-lib-setup
+
+@title[#:style (with-html5 manual-doc-style)
+       #:tag "graph-impl"
+       #:tag-prefix "phc-graph/graph-impl"]{Implementation of the graph macro}
+
+@(chunks-toc-prefix
+  '("(lib phc-graph/scribblings/phc-graph-implementation.scrbl)"
+    "phc-graph/graph-impl"))
+
 
 @chunk[<graph>
        (define-syntax define-graph
