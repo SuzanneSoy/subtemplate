@@ -1,4 +1,4 @@
-#lang hyper-literate typed/racket #:no-auto-require
+#lang hyper-literate typed/racket/base #:no-auto-require
 
 @require[scribble-math
          scribble-enhanced/doc
@@ -81,9 +81,12 @@
        (require racket/require
                 phc-toolkit
                 (lib "phc-adt/tagged-structure-low-level.hl.rkt")
-                (for-syntax "graph-info.hl.rkt"
+                (for-syntax (subtract-in racket/base
+                                         phc-graph/subtemplate-override)
+                            "graph-info.hl.rkt"
                             phc-toolkit/untyped
-                            (subtract-in syntax/parse phc-graph/subtemplate)
+                            (subtract-in syntax/parse
+                                         phc-graph/subtemplate)
                             racket/set
                             phc-graph/subtemplate-override))
 
