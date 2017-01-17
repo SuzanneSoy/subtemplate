@@ -24,13 +24,14 @@
                            {~seq [root-node . _] _ …})
                      {~seq #:invariant a {~and op {~or ∈ ∋ ≡ ≢ ∉}} b} …
                      {~seq #:invariant p} …))))
-       
+
        (define-syntax/parse (define-graph-type . :signature)
          (define gi <graph-info>)
          (local-require racket/pretty)
-         (pretty-print gi (current-output-port) 0)
+         (parameterize ([pretty-print-columns 188])
+           (pretty-print gi (current-output-port) 0))
          #`(begin
-             (define-syntax name #,gi)))]
+             #;(define-syntax name #,gi)))]
 
 @chunk[<graph-info>
        (graph-info #'name
@@ -84,7 +85,7 @@
                             phc-toolkit/untyped
                             (subtract-in syntax/parse phc-graph/subtemplate)
                             racket/set
-                            phc-graph/subtemplate))
+                            phc-graph/subtemplate-override))
 
        (provide define-graph-type)
        

@@ -132,10 +132,20 @@ data.
        (define (to-datum v)
          (syntax->datum (datum->syntax #f v)))
 
-       (define (struct-printer2 ctor)
-         (make-constructor-style-printer
-          (λ (v) ctor)
-          (λ (v) (map to-datum (struct->list v)))))
+       (define ((syntax-convert old-print-convert-hook)
+                val basic-convert sub-convert)
+         (cond
+           [(set? val)
+            (cons 'set (map sub-convert (set->list val)))]
+           [(and (hash? val) (immutable? val))
+            (cons 'hash
+                  (append-map (λ (p) (list (sub-convert (car p))
+                                           (sub-convert (cdr p))))
+                              (hash->list val)))]
+           [(syntax? val)
+            (list 'syntax (to-datum val))]
+           [else
+            (old-print-convert-hook val basic-convert sub-convert)]))
 
        (define ((struct-printer ctor) st port mode)
          (match-define (vector name fields ...) (struct->vector st))
@@ -162,42 +172,23 @@ data.
                         (display (to-datum f) port))
                       fields)
             (display ")" port)]
-           [(0)
-            (display "(" port)
-            (display short-name port)
-            (for-each (λ (f)
-                        (display " " port)
-                        ;; Circumvent the undocumented(?) autodetection of
-                        ;; print which changes the behaviour  if objects which
-                        ;; are not eq? to the original fields are directly
-                        ;; printed to the port.
-                        (let ([str (with-output-to-string
-                                    (λ ()
-                                      (print (to-datum f) (current-output-port) 0)))])
-                          (display (string-append str " ") port)))
-                      fields)
-            (display ")" port)]
-           [(1)
-            (display "#(" port)
-            (display name port)
-            (for-each (λ (f)
-                        (display " " port)
-                        (display
-                         ;; Circumvent the undocumented(?) autodetection of
-                         ;; print which changes the behaviour  if objects which
-                         ;; are not eq? to the original fields are directly
-                         ;; printed to the port.
-                         #;(with-output-to-string
-                          (λ ()
-                            (print (to-datum f) (current-output-port) 1)))
-                         "abab"
-                         port))
-                      fields)
-            (display ")" port)]))]
+           [else
+            (let ([old-print-convert-hook (current-print-convert-hook)])
+              (parameterize ([constructor-style-printing #t]
+                             [show-sharing #f]
+                             [current-print-convert-hook
+                              (syntax-convert old-print-convert-hook)])
+                (write
+                 (cons short-name
+                       (map print-convert
+                            ;; to-datum doesn't work if I map it on the fields?
+                            fields))
+                 port)))]))]
 
 @CHUNK[<*>
        (require phc-toolkit/untyped
                 racket/struct
+                mzlib/pconvert
                 (for-syntax phc-toolkit/untyped
                             syntax/parse
                             syntax/parse/experimental/template))

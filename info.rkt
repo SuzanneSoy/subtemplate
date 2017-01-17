@@ -12,7 +12,8 @@
                "delay-pure"
                "backport-template-pr1514"
                "typed-map"
-               "scribble-lib"))
+               "scribble-lib"
+               "pconvert-lib"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"
