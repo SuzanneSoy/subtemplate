@@ -25,31 +25,10 @@
                      {~seq #:invariant a {~and op {~or ∈ ∋ ≡ ≢ ∉}} b} …
                      {~seq #:invariant p} …))))
 
-       ;; DEBUG
-       (require (for-syntax mzlib/pconvert
-                            racket/list))
-       (define-for-syntax (to-datum v)
-         (syntax->datum (datum->syntax #f v)))
-       (define-for-syntax ((syntax-convert old-print-convert-hook)
-                           val basic-convert sub-convert)
-         (cond
-           [(set? val)
-            (cons 'set (map sub-convert (set->list val)))]
-           [(and (hash? val) (immutable? val))
-            (cons 'hash
-                  (append-map (λ (p) (list (sub-convert (car p))
-                                           (sub-convert (cdr p))))
-                              (hash->list val)))]
-           [(syntax? val)
-            (list 'syntax (to-datum val))]
-           [else
-            (old-print-convert-hook val basic-convert sub-convert)]))
-
        (define-for-syntax compute-graph-info
          (syntax-parser
            [:signature <graph-info>]))
        (define-syntax/parse (define-graph-type . whole:signature)
-         (local-require racket/pretty)
          ;; fire off the eventual errors within macro-expansion.
          (compute-graph-info #'whole)
          #`(begin
