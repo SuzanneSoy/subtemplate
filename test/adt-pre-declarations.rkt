@@ -10,3 +10,7 @@
 (remembered! tagged-structure (node-incompleteᵢ houses name))
 (remembered! tagged-structure (node-incompleteᵢ owner))
 (remembered! tagged-structure (node-incompleteᵢ name))
+(remembered! tagged-structure (| City-incomplete| citizens name streets))
+(remembered! tagged-structure (| Street-incomplete| houses name))
+(remembered! tagged-structure (| House-incomplete| owner))
+(remembered! tagged-structure (| Person-incomplete| name))

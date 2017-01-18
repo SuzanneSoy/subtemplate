@@ -24,63 +24,68 @@ We define here the compile-time metadata describing a graph type.
           [root-node identifier?]
           [node-order (listof identifier?)]
           [nodes (hash/c symbol? node-info? #:immutable #t)]
-          [invariants (equal-hash-set/c invariant-info? #:kind 'immutable)])
-         #:prefab)]
+          [invariants (set/c invariant-info? #:kind 'immutable #:cmp 'equal)])
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'graph-info))]
+         #:property prop:custom-print-quotable 'never)]
 
-Since sets created with @racket[set] cannot be used within syntax objects
-(they cannot be marshalled into compiled code), we fake sets using hashes with
-empty values:
+@;{
+ Since sets created with @racket[set] cannot be used within syntax objects
+ (they cannot be marshalled into compiled code), we fake sets using hashes with
+ empty values:
 
-@chunk[<hash-set/c>
-       (provide hash-set/c)
-       (define/contract (hash-set/c elem/c
-                                    #:kind [kind 'dont-care]
-                                    #:cmp [cmp 'dont-care])
-         (->* (chaperone-contract?)
-              (#:kind (or/c 'dont-care 'immutable 'mutable
-                            'weak 'mutable-or-weak)
-               #:cmp (or/c 'dont-care 'equal 'eqv 'eq))
-              contract?)
-         (define immutable
-           (case kind
-             [(immutable)       #t]
-             [(dont-care)       'dont-care]
-             [else              #f]))
-         (define h              (hash/c elem/c
-                                        null?
-                                        #:immutable immutable))
-         (define cmp-contracts
-           (case cmp
-             [(dont-care)       empty]
-             [(equal)           (list hash-equal?)]
-             [(eqv)             (list hash-eqv?)]
-             [(eq)              (list hash-eq?)]))
-         (define weak-contracts
-           (case kind
-             [(weak)            (list hash-weak?)]
-             ;; This is redundant as the mutable check is already included above
-             [(mutable-or-weak) (list (or/c hash-weak? (not/c immutable?)))]
-             [(dont-care)       empty]
-             [else              (list (not/c hash-weak?))]))
-         (if (empty? (append cmp-contracts weak-contracts))
-             h
-             (apply and/c (append (list h) cmp-contracts weak-contracts))))]
+ @chunk[<hash-set/c>
+        (provide hash-set/c)
+        (define/contract (hash-set/c elem/c
+                                     #:kind [kind 'dont-care]
+                                     #:cmp [cmp 'dont-care])
+          (->* (chaperone-contract?)
+               (#:kind (or/c 'dont-care 'immutable 'mutable
+                             'weak 'mutable-or-weak)
+                #:cmp (or/c 'dont-care 'equal 'eqv 'eq))
+               contract?)
+          (define immutable
+            (case kind
+              [(immutable)       #t]
+              [(dont-care)       'dont-care]
+              [else              #f]))
+          (define h              (hash/c elem/c
+                                         null?
+                                         #:immutable immutable))
+          (define cmp-contracts
+            (case cmp
+              [(dont-care)       empty]
+              [(equal)           (list hash-equal?)]
+              [(eqv)             (list hash-eqv?)]
+              [(eq)              (list hash-eq?)]))
+          (define weak-contracts
+            (case kind
+              [(weak)            (list hash-weak?)]
+              ;; This is redundant as the mutable check is already included above
+              [(mutable-or-weak) (list (or/c hash-weak? (not/c immutable?)))]
+              [(dont-care)       empty]
+              [else              (list (not/c hash-weak?))]))
+          (if (empty? (append cmp-contracts weak-contracts))
+              h
+              (apply and/c (append (list h) cmp-contracts weak-contracts))))]
 
-@chunk[<hash-set/c>
-       (provide equal-hash-set/c)
-       (define/contract (equal-hash-set/c elem/c
-                                          #:kind [kind 'dont-care])
-         (->* (chaperone-contract?)
-              (#:kind (or/c 'dont-care 'immutable 'mutable
-                            'weak 'mutable-or-weak))
-              contract?)
-         (hash-set/c elem/c #:kind kind #:cmp 'equal))]
+ @chunk[<hash-set/c>
+        (provide equal-hash-set/c)
+        (define/contract (equal-hash-set/c elem/c
+                                           #:kind [kind 'dont-care])
+          (->* (chaperone-contract?)
+               (#:kind (or/c 'dont-care 'immutable 'mutable
+                             'weak 'mutable-or-weak))
+               contract?)
+          (hash-set/c elem/c #:kind kind #:cmp 'equal))]
 
-@chunk[<hash-set/c>
-       (provide list->equal-hash-set)
-       (define/contract (list->equal-hash-set l)
-         (-> (listof any/c) (equal-hash-set/c any/c #:kind 'immutable))
-         (make-immutable-hash (map (λ (v) (cons v null)) l)))]
+ @chunk[<hash-set/c>
+        (provide list->equal-hash-set)
+        (define/contract (list->equal-hash-set l)
+          (-> (listof any/c) (equal-hash-set/c any/c #:kind 'immutable))
+          (make-immutable-hash (map (λ (v) (cons v null)) l)))]
+}
 
 @section{Graph builder information}
 
@@ -91,14 +96,18 @@ empty values:
           [root-node identifier?]
           [node-order (listof identifier?)]
           [nodes (hash/c symbol? node-info? #:immutable #t)]
-          [invariants (equal-hash-set/c invariant-info? #:kind 'immutable)])
+          [invariants (set/c invariant-info? #:kind 'immutable #:cmp 'equal)])
          ([multi-constructor identifier?]
           [root-mapping identifier?]
           [mapping-order (listof identifier?)]
           [mappings (hash/c symbol? mapping-info? #:immutable #t)]
-          [dependent-invariants (equal-hash-set/c dependent-invariant-info?
-                                                  #:kind 'immutable)])
-         #:prefab)]
+          [dependent-invariants (set/c dependent-invariant-info?
+                                       #:kind 'immutable
+                                       #:cmp 'equal)])
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'graph-builder-info))]
+         #:property prop:custom-print-quotable 'never)]
 
 @section{Node information}
 
@@ -110,7 +119,10 @@ empty values:
           [promise-type identifier?]
           [make-incomplete-type identifier?]
           [incomplete-type identifier?])
-         #:prefab)]
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'node-info))]
+         #:property prop:custom-print-quotable 'never)]
 
 @section{Field information}
 
@@ -119,7 +131,10 @@ A field has a type.
 @chunk[<field-info>
        (struct+/contract field-info
          ([type identifier?])
-         #:prefab)]
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'field-info))]
+         #:property prop:custom-print-quotable 'never)]
 
 @;[incomplete-type identifier?]
 
@@ -129,7 +144,10 @@ A field has a type.
        (struct+/contract invariant-info
          ([predicate identifier?] ; (→ RootNode Boolean : +witness-type)
           [witness-type identifier?])
-         #:prefab)]
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'invariant-info))]
+         #:property prop:custom-print-quotable 'never)]
 
 @section{Dependent invariant information}
 
@@ -141,7 +159,10 @@ which relate the old and the new graph in a graph transformation.
        (struct+/contract dependent-invariant-info
          ([checker identifier?] ; (→ RootMappingArguments… NewGraphRoot Boolean)
           [name identifier?])
-         #:prefab)]
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'dependent-invariant-info))]
+         #:property prop:custom-print-quotable 'never)]
 
 @section{Mapping information}
 
@@ -151,7 +172,10 @@ which relate the old and the new graph in a graph transformation.
           [with-promises-type identifier?]
           [make-placeholder-type identifier?]
           [placeholder-type identifier?])
-         #:prefab)]
+         #:transparent
+         #:methods gen:custom-write
+         [(define write-proc (struct-printer 'mapping-info))]
+         #:property prop:custom-print-quotable 'never)]
 
 @section{Printing}
 
@@ -261,7 +285,7 @@ data.
                                           [field contract]
                                           ...))))))))
 
-       <hash-set/c>
+       ;<hash-set/c>
        <printer>
 
        <field-info>

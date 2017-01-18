@@ -1,4 +1,4 @@
-#lang hyper-literate typed/racket #:no-auto-require
+#lang aful/unhygienic hyper-literate typed/racket #:no-auto-require
 
 @require[scribble-math
          scribble-enhanced/doc
@@ -45,20 +45,20 @@
            [else
             (old-print-convert-hook val basic-convert sub-convert)]))
 
-       (define-syntax/parse (define-graph-type . :signature)
-         (define gi <graph-info>)
+       (define-for-syntax compute-graph-info
+         (syntax-parser
+           [:signature <graph-info>]))
+       (define-syntax/parse (define-graph-type . whole:signature)
          (local-require racket/pretty)
-         #;(let ([old-print-convert-hook (current-print-convert-hook)])
-           (parameterize ([constructor-style-printing #t]
-                          [show-sharing #f]
-                          [current-print-convert-hook
-                           (syntax-convert old-print-convert-hook)])
-             (parameterize ([pretty-print-columns 188])
-               (pretty-write (print-convert gi)))))
+         ;; fire off the eventual errors within macro-expansion.
+         (compute-graph-info #'whole)
          #`(begin
-             (define-syntax name #,gi)))]
+             (define-syntax whole.name
+               (compute-graph-info (quote-syntax whole)))))]
 
 @chunk[<graph-info>
+       #:with (node-incompleteᵢ …) (stx-map #λ(format-id % " ~a-incomplete" %)
+                                            #'(nodeᵢ …))
        (graph-info #'name
                    (syntax->list (if (attribute tvar) #'(tvar …) #'()))
                    #'root-node
@@ -66,10 +66,12 @@
                    (make-immutable-hash
                     (map cons
                          (stx-map syntax-e #'(nodeᵢ …))
-                         (stx-map (λ/syntax-case (nodeᵢ [fieldᵢⱼ τᵢⱼ] …) ()
+                         (stx-map (λ/syntax-case (nodeᵢ node-incompleteᵢ
+                                                        [fieldᵢⱼ τᵢⱼ] …) ()
                                     <node-info>)
-                                  #'([nodeᵢ [fieldᵢⱼ τᵢⱼ] …] …))))
-                   (list->equal-hash-set
+                                  #'([nodeᵢ node-incompleteᵢ
+                                      [fieldᵢⱼ τᵢⱼ] …] …))))
+                   (list->set
                     (append
                      (stx-map (λ/syntax-case (op a b) () <invariant-info-op>)
                               #'([op a b] …))
@@ -110,7 +112,9 @@
                             phc-toolkit/untyped
                             (subtract-in syntax/parse phc-graph/subtemplate)
                             racket/set
-                            phc-graph/subtemplate-override))
+                            phc-graph/subtemplate-override
+                            racket/syntax)
+                (for-meta 2 racket/base))
 
        (provide define-graph-type)
        
