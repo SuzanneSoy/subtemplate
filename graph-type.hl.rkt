@@ -25,11 +25,36 @@
                      {~seq #:invariant a {~and op {~or ∈ ∋ ≡ ≢ ∉}} b} …
                      {~seq #:invariant p} …))))
 
+       ;; DEBUG
+       (require (for-syntax mzlib/pconvert
+                            racket/list))
+       (define-for-syntax (to-datum v)
+         (syntax->datum (datum->syntax #f v)))
+       (define-for-syntax ((syntax-convert old-print-convert-hook)
+                           val basic-convert sub-convert)
+         (cond
+           [(set? val)
+            (cons 'set (map sub-convert (set->list val)))]
+           [(and (hash? val) (immutable? val))
+            (cons 'hash
+                  (append-map (λ (p) (list (sub-convert (car p))
+                                           (sub-convert (cdr p))))
+                              (hash->list val)))]
+           [(syntax? val)
+            (list 'syntax (to-datum val))]
+           [else
+            (old-print-convert-hook val basic-convert sub-convert)]))
+
        (define-syntax/parse (define-graph-type . :signature)
          (define gi <graph-info>)
          (local-require racket/pretty)
-         #;(parameterize ([pretty-print-columns 188])
-             (pretty-print gi (current-output-port) 0))
+         #;(let ([old-print-convert-hook (current-print-convert-hook)])
+           (parameterize ([constructor-style-printing #t]
+                          [show-sharing #f]
+                          [current-print-convert-hook
+                           (syntax-convert old-print-convert-hook)])
+             (parameterize ([pretty-print-columns 188])
+               (pretty-write (print-convert gi)))))
          #`(begin
              (define-syntax name #,gi)))]
 
