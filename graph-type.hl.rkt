@@ -44,7 +44,7 @@
                          (stx-map (λ/syntax-case (nodeᵢ [fieldᵢⱼ τᵢⱼ] …) ()
                                     <node-info>)
                                   #'([nodeᵢ [fieldᵢⱼ τᵢⱼ] …] …))))
-                   (list->set
+                   (list->equal-hash-set
                     (append
                      (stx-map (λ/syntax-case (op a b) () <invariant-info-op>)
                               #'([op a b] …))
