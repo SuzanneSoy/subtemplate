@@ -89,9 +89,9 @@
                                    <field-info>)
                                  #'([fieldᵢⱼ τᵢⱼ] …))))
                   (check-remembered-node! #'(nodeᵢ fieldᵢⱼ …))
-                  (meta-struct-constructor
+                  #;(meta-struct-constructor
                    (check-remembered-tagged! #'(node-incompleteᵢ fieldᵢⱼ …)))
-                  (check-remembered-tagged! #'(node-incompleteᵢ fieldᵢⱼ …)))]
+                  #;(check-remembered-tagged! #'(node-incompleteᵢ fieldᵢⱼ …)))]
 
 @chunk[<field-info>
        (field-info #'τᵢⱼ)]

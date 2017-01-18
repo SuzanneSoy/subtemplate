@@ -117,8 +117,11 @@ We define here the compile-time metadata describing a graph type.
           [field-order (listof identifier?)]
           [fields (hash/c symbol? field-info? #:immutable #t)]
           [promise-type identifier?]
-          [make-incomplete-type identifier?]
-          [incomplete-type identifier?])
+          ;; Wrappers can mean that we have incomplete types with fewer
+          ;; fields than the final node type.
+          ;[make-incomplete-type identifier?]
+          ;[incomplete-type identifier?]
+          )
          #:transparent
          #:methods gen:custom-write
          [(define write-proc (struct-printer 'node-info))]
