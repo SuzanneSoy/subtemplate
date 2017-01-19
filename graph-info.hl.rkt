@@ -17,6 +17,17 @@ We define here the compile-time metadata describing a graph type.
 
 @section{Graph type information}
 
+The type of a graph is actually the type of its constituent nodes. The node
+types may be polymorphic in the @racket[_tvars] type variables. The root node
+name and the order of the nodes are purely indicative here, as a reference to
+any node in the graph instance would be indistinguishable from a graph rooted
+in that node type.
+
+The @racket[_invariants] are not enforced by the node types. Instead, the node
+types just include the invariant type as a witness (inside the @racket[raw]
+field). The invariant is enforced either by construction, or with a run-time
+check performed during the graph creation.
+
 @chunk[<graph-info>
        (struct+/contract graph-info
          ([name identifier?]
@@ -62,7 +73,7 @@ We define here the compile-time metadata describing a graph type.
           (define weak-contracts
             (case kind
               [(weak)            (list hash-weak?)]
-              ;; This is redundant as the mutable check is already included above
+              ;; This is redundant: the mutable check is already included above
               [(mutable-or-weak) (list (or/c hash-weak? (not/c immutable?)))]
               [(dont-care)       empty]
               [else              (list (not/c hash-weak?))]))
@@ -88,6 +99,21 @@ We define here the compile-time metadata describing a graph type.
 }
 
 @section{Graph builder information}
+
+The information about a graph type is valid regardless of how the graph
+instances are constructed, and is therefore rather succinct.
+
+The @racket[graph-builder-info] @racket[struct] extends this with meaningful
+information about graph transformations. Two transformations which have the
+same output graph type may use different sets of mapping functions.
+Furthermore, the @racket[_dependent-invariants] are invariants relating the
+input and output of a graph transformation.
+
+The @racket[_multi-constructor] identifier refers to a function which takes
+@${n} lists of lists of mapping argument tuples, and returns @${n} lists of
+lists of nodes. It is the most general function allowing the creation of
+instances of the graph. Wrappers which accept a single tuple of arguments and
+return the corresponding node can be written based on it.
 
 @chunk[<graph-builder-info>
        (struct+/contract graph-builder-info graph-info
@@ -281,6 +307,9 @@ data.
                   (struct/c name
                             (?? (?@ parent-contract ...))
                             contract ...))
+                (module+ test
+                  (require rackunit)
+                  (check-pred flat-contract? name/c))
                 (provide name/c
                          (contract-out (struct (?? (name parent) name)
                                          ((?? (?@ [parent-field parent-contract]
