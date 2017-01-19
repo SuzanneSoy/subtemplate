@@ -139,10 +139,10 @@ return the corresponding node can be written based on it.
 
 @chunk[<node-info>
        (struct+/contract node-info
-         ([predicate? identifier?]
+         ([predicate? identifier?] ;; (expr/τ (→ Any Boolean : ?))
           [field-order (listof identifier?)]
           [fields (hash/c symbol? field-info? #:immutable #t)]
-          [promise-type identifier?]
+          [promise-type stx-type/c]
           ;; Wrappers can mean that we have incomplete types with fewer
           ;; fields than the final node type.
           ;[make-incomplete-type identifier?]
@@ -159,7 +159,7 @@ A field has a type.
 
 @chunk[<field-info>
        (struct+/contract field-info
-         ([type identifier?])
+         ([type stx-type/c])
          #:transparent
          #:methods gen:custom-write
          [(define write-proc (struct-printer 'field-info))]
@@ -172,7 +172,7 @@ A field has a type.
 @chunk[<invariant-info>
        (struct+/contract invariant-info
          ([predicate identifier?] ; (→ RootNode Boolean : +witness-type)
-          [witness-type identifier?])
+          [witness-type stx-type/c])
          #:transparent
          #:methods gen:custom-write
          [(define write-proc (struct-printer 'invariant-info))]
@@ -275,6 +275,7 @@ data.
 
 @CHUNK[<*>
        (require phc-toolkit/untyped
+                type-expander/expander
                 racket/struct
                 mzlib/pconvert
                 (for-syntax phc-toolkit/untyped
@@ -296,7 +297,7 @@ data.
                                  _)))
              {~optional {~and prefab #:prefab}})
          #:with name/c (format-id #'name "~a/c" #'name)
-         (quasisyntax/top-loc this-syntax
+         (quasisyntax/top-loc (stx-car this-syntax)
            #,(template
               (begin
                 (struct name (?? parent) (field ...)
