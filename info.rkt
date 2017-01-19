@@ -13,7 +13,8 @@
                "backport-template-pr1514"
                "typed-map"
                "scribble-lib"
-               "pconvert-lib"))
+               "pconvert-lib"
+               "remember"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"

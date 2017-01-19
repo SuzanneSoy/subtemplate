@@ -25,12 +25,14 @@
                      {~seq #:invariant a {~and op {~or ∈ ∋ ≡ ≢ ∉}} b} …
                      {~seq #:invariant p} …))))
 
-       (define-for-syntax compute-graph-info
-         (syntax-parser
-           [:signature <graph-info>]))
+       (define-for-syntax (compute-graph-info stx)
+         (parameterize ([disable-remember-immediate-error #t])
+           (syntax-parse stx
+             [:signature
+              <graph-info>])))
        (define-syntax/parse (define-graph-type . whole:signature)
-         ;; fire off the eventual errors within macro-expansion.
-         (compute-graph-info #'whole)
+         ;; fire off the eventual delayed errors added by compute-graph-info
+         (lift-maybe-delayed-errors)
          #`(begin
              (define-syntax whole.name
                (compute-graph-info (quote-syntax whole)))))]
@@ -86,6 +88,7 @@
 @chunk[<*>
        (require racket/require
                 phc-toolkit
+                remember
                 (lib "phc-adt/tagged-structure-low-level.hl.rkt")
                 (for-syntax "graph-info.hl.rkt"
                             phc-toolkit/untyped

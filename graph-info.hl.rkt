@@ -139,7 +139,7 @@ return the corresponding node can be written based on it.
 
 @chunk[<node-info>
        (struct+/contract node-info
-         ([predicate? identifier?] ;; (expr/τ (→ Any Boolean : ?))
+         ([predicate? identifier?]
           [field-order (listof identifier?)]
           [fields (hash/c symbol? field-info? #:immutable #t)]
           [promise-type stx-type/c]
