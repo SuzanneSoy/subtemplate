@@ -15,7 +15,10 @@
   #:invariant City.citizens._ ∈ City.streets._.houses._.owner
   #:invariant City.citizens._ ∋ City.streets._.houses._.owner)
 
-(begin-for-syntax
-  (require racket/pretty)
-  (parameterize ([pretty-print-columns 188])
-    (pretty-print (syntax-local-value #'g1))))
+(begin
+  (require (for-syntax racket/pretty))
+  (define-syntax (debg _stx)
+    (parameterize ([pretty-print-columns 188])
+      (pretty-print (syntax-local-value #'g1)))
+    #'(void))
+  (debg))

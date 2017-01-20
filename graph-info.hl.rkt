@@ -297,8 +297,9 @@ data.
                                  _)))
              {~optional {~and prefab #:prefab}})
          #:with name/c (format-id #'name "~a/c" #'name)
-         (quasisyntax/top-loc (stx-car this-syntax)
-           #,(template
+         ;(quasisyntax/loc (stx-car this-syntax)
+         ;  #,
+         (template
               (begin
                 (struct name (?? parent) (field ...)
                   (?? transparent)
@@ -316,7 +317,7 @@ data.
                                          ((?? (?@ [parent-field parent-contract]
                                                   ...))
                                           [field contract]
-                                          ...))))))))
+                                          ...)))))))
 
        ;<hash-set/c>
        <printer>
