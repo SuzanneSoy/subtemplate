@@ -2,9 +2,9 @@
 (define collection "phc-graph")
 (define deps '("base"
                "rackunit-lib"
-               "https://github.com/jsmaniac/phc-toolkit.git#dev"
-               "https://github.com/jsmaniac/phc-adt.git?path=phc-adt#dev"
-               "https://github.com/jsmaniac/type-expander.git#Let-Λ"
+               "phc-toolkit"
+               "phc-adt"
+               "type-expander"
                "hyper-literate"
                "scribble-enhanced"
                "typed-racket-lib"
