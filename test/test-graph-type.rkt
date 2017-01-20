@@ -18,7 +18,8 @@
   #:invariant City.citizens._ ∋ City.streets._.houses._.owner)
 
 (module* test racket/base
-  (require (for-syntax racket/pretty)
+  (require (for-syntax racket/pretty
+                       racket/base)
            (submod ".."))
   (eval #'(begin
             (define-syntax (dbg _stx)
