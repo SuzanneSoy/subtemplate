@@ -14,7 +14,8 @@
                "typed-map"
                "scribble-lib"
                "pconvert-lib"
-               "remember"))
+               "remember"
+               "extensible-parser-specifications"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "remember"

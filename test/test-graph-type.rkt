@@ -17,13 +17,23 @@
   #:invariant City.citizens._ ∈ City.streets._.houses._.owner
   #:invariant City.citizens._ ∋ City.streets._.houses._.owner)
 
-(module* test racket/base
-  (require (for-syntax racket/pretty
-                       racket/base)
-           (submod ".."))
-  (eval #'(begin
-            (define-syntax (dbg _stx)
-              (parameterize ([pretty-print-columns 188])
-                (pretty-print (syntax-local-value #'g1)))
-              #'(void))
-            (dbg))))
+(require (for-syntax racket/pretty
+                     racket/base))
+(eval #'(begin
+          (define-syntax (dbg _stx)
+            (parameterize ([pretty-print-columns 188])
+              (pretty-print (syntax-local-value #'g1)))
+            #'(void))
+          (dbg)))
+
+(require (for-syntax syntax/parse
+                     "../graph-info.hl.rkt"))
+
+(define-syntax dbg
+  (syntax-parser
+    [(_ t)
+     #`(define-type t
+         #,(node-info-promise-type
+            (hash-ref (graph-info-nodes (syntax-local-value #'g1)) 'City)))]))
+(dbg t-city)
+;(define-type expected (t-city Number String Symbol 'Database 'Index))

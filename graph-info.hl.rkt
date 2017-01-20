@@ -265,7 +265,7 @@ data.
            (syntax->datum (datum->syntax #f v)))
          (case mode
            [(#t)
-            (display "#(~#t~" port)
+            (display "#(" port)
             (display name port)
             (for-each (λ (f)
                         (display " " port)
@@ -273,7 +273,7 @@ data.
                       fields)
             (display ")" port)]
            [(#f)
-            (display "#(~#f~" port)
+            (display "#(" port)
             (display name port)
             (for-each (λ (f)
                         (display " " port)
