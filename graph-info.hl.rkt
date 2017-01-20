@@ -176,7 +176,17 @@ A field has a type.
          #:transparent
          #:methods gen:custom-write
          [(define write-proc (struct-printer 'invariant-info))]
-         #:property prop:custom-print-quotable 'never)]
+         #:property prop:custom-print-quotable 'never
+         #:methods gen:equal+hash
+         [(define (equal-proc a b r)
+            (free-id-tree=? (vector->immutable-vector (struct->vector a))
+                            (vector->immutable-vector (struct->vector b))))
+          (define (hash-proc a r)
+            (free-id-tree-hash-code
+             (vector->immutable-vector (struct->vector a))))
+          (define (hash2-proc a r)
+            (free-id-tree-secondary-hash-code
+             (vector->immutable-vector (struct->vector a))))])]
 
 @section{Dependent invariant information}
 
@@ -191,7 +201,17 @@ which relate the old and the new graph in a graph transformation.
          #:transparent
          #:methods gen:custom-write
          [(define write-proc (struct-printer 'dependent-invariant-info))]
-         #:property prop:custom-print-quotable 'never)]
+         #:property prop:custom-print-quotable 'never
+         #:methods gen:equal+hash
+         [(define (equal-proc a b r)
+            (free-id-tree=? (vector->immutable-vector (struct->vector a))
+                            (vector->immutable-vector (struct->vector b))))
+          (define (hash-proc a r)
+            (free-id-tree-hash-code
+             (vector->immutable-vector (struct->vector a))))
+          (define (hash2-proc a r)
+            (free-id-tree-secondary-hash-code
+             (vector->immutable-vector (struct->vector a))))])]
 
 @section{Mapping information}
 
@@ -278,6 +298,7 @@ data.
                 type-expander/expander
                 racket/struct
                 mzlib/pconvert
+                "free-identifier-tree-equal.rkt"
                 (for-syntax phc-toolkit/untyped
                             syntax/parse
                             syntax/parse/experimental/template
@@ -289,35 +310,30 @@ data.
              ([field contract] ...)
              {~optional {~and transparent #:transparent}}
              (~and {~seq methods+props ...}
-                   (~seq (~maybe #:methods
-                                 {~literal gen:custom-write}
-                                 _)
-                         (~maybe #:property
-                                 {~literal prop:custom-print-quotable}
-                                 _)))
-             {~optional {~and prefab #:prefab}})
+                   (~seq (~or {~seq #:methods _ _}
+                              {~seq #:property _ _})
+                         ...)))
          #:with name/c (format-id #'name "~a/c" #'name)
          ;(quasisyntax/loc (stx-car this-syntax)
          ;  #,
          (template
-              (begin
-                (struct name (?? parent) (field ...)
-                  (?? transparent)
-                  methods+props ...
-                  (?? prefab))
-                (define name/c
-                  (struct/c name
-                            (?? (?@ parent-contract ...))
-                            contract ...))
-                (module+ test
-                  (require rackunit)
-                  (check-pred flat-contract? name/c))
-                (provide name/c
-                         (contract-out (struct (?? (name parent) name)
-                                         ((?? (?@ [parent-field parent-contract]
-                                                  ...))
-                                          [field contract]
-                                          ...)))))))
+          (begin
+            (struct name (?? parent) (field ...)
+              (?? transparent)
+              methods+props ...)
+            (define name/c
+              (struct/c name
+                        (?? (?@ parent-contract ...))
+                        contract ...))
+            (module+ test
+              (require rackunit)
+              (check-pred flat-contract? name/c))
+            (provide name/c
+                     (contract-out (struct (?? (name parent) name)
+                                     ((?? (?@ [parent-field parent-contract]
+                                              ...))
+                                      [field contract]
+                                      ...)))))))
 
        ;<hash-set/c>
        <printer>

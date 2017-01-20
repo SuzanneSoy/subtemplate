@@ -1,6 +1,8 @@
 #lang racket
 
-(require racket/struct)
+(require racket/struct
+         ;; TODO: move delay-pure/private/immutable-struct to a separate package
+         delay-pure/private/immutable-struct) ;; for immutable-struct? below.
 
 (provide free-id-tree=?
          free-id-tree-hash-code
@@ -14,8 +16,29 @@
          make-mutable-free-id-tree-table
          make-weak-free-id-tree-table)
 
-(define (free-id-tree=? a b)
-  (define rec=? free-id-tree=?)
+;; Contract:
+;; TODO: move to tr-immutable
+(define isyntax/c
+  (flat-rec-contract isyntax
+                     (or/c boolean?
+                           char?
+                           number?
+                           keyword?
+                           null?
+                           (and/c string? immutable?)
+                           symbol?
+                           (box/c isyntax #:immutable #t)
+                           (cons/c isyntax isyntax)
+                           (vectorof isyntax #:immutable #t)
+                           (syntax/c isyntax)
+                           (and/c immutable-struct?
+                                  prefab-struct-key
+                                  (λ (v)
+                                    (andmap isyntax/c (struct->list v)))))))
+
+(define/contract (free-id-tree=? a b [r equal?])
+  (-> isyntax/c isyntax/c boolean?)
+  (define (rec=? a b) (free-id-tree=? a b r))
   (cond
     [(identifier? a) (and (identifier? b)
                           (free-identifier=? a b))]
@@ -38,17 +61,17 @@
                  (rec=? (struct->list a)
                         (struct->list b)))))]
     [(null? a) (null? b)]
-    [else (error (format "Unexpected value for free-id-tree=? : ~a"
-                         a))]))
+    [else (equal? a b)]))
 
-(define ((free-id-tree-hash hc) a)
+(define/contract ((free-id-tree-hash hc) a)
+  (-> (-> any/c fixnum?) (-> isyntax/c fixnum?))
   (define rec-hash (free-id-tree-hash hc))
   (cond
     [(identifier? a) (hc (syntax-e #'a))]
     [(syntax? a) (rec-hash (syntax-e a))]
     [(pair? a) (hc (cons (rec-hash (car a))
                          (rec-hash (cdr a))))]
-    [(vector? a) (hc (list->vector (rec-hash (vector->list a))))]
+    [(vector? a) (hc (list->vector (map rec-hash (vector->list a))))]
     [(box? a) (hc (box (rec-hash (unbox a))))]
     [(prefab-struct-key a)
      => (λ (a-key)

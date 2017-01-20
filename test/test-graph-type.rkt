@@ -4,6 +4,8 @@
          (lib "phc-graph/graph-type.hl.rkt"))
 (adt-init)
 
+(provide g1)
+
 (define-graph-type g1
   [City [name : String]
         [streets : (Listof Street)]
@@ -15,10 +17,12 @@
   #:invariant City.citizens._ ∈ City.streets._.houses._.owner
   #:invariant City.citizens._ ∋ City.streets._.houses._.owner)
 
-(begin
-  (require (for-syntax racket/pretty))
-  (define-syntax (debg _stx)
-    (parameterize ([pretty-print-columns 188])
-      (pretty-print (syntax-local-value #'g1)))
-    #'(void))
-  (debg))
+(module* test racket/base
+  (require (for-syntax racket/pretty)
+           (submod ".."))
+  (eval #'(begin
+            (define-syntax (dbg _stx)
+              (parameterize ([pretty-print-columns 188])
+                (pretty-print (syntax-local-value #'g1)))
+              #'(void))
+            (dbg))))
