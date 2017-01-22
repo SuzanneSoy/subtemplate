@@ -127,6 +127,14 @@
            (not (string=? binder-subscripts ""))
            binder-subscripts)))
 
+  (define/contract (drop-subscripts id)
+    (-> identifier? identifier?)
+    (let* ([str (symbol->string (syntax-e id))]
+           [sub (extract-subscripts id)]
+           [new-str (substring str 0 (- (string-length str)
+                                        (string-length sub)))])
+      (datum->syntax id (string->symbol new-str) id id)))
+
   (define/contract (find-subscript-binder2a lctx scopes bound scope-depth)
     (-> identifier?
         (listof (cons/c identifier? (listof symbol?)))
@@ -268,9 +276,13 @@
                              stx-scope-depth) ()
   (define depth (syntax-e #'stx-depth))
   (define/with-syntax bound-ddd (nest-ellipses #'bound depth))
-  (define/with-syntax tmp-id (format-id #'here "~a/~a" #'max-binder0 #'bound))
-  (define/with-syntax tmp-str (datum->syntax #'tmp-id (symbol->string
-                                                       (syntax-e #'tmp-id))))
+  (define/with-syntax tmp-id
+    (format-id #'here "~a/~a" #'max-binder0 (drop-subscripts #'bound)))
+  (define/with-syntax tmp-str
+    (datum->syntax #'tmp-id
+                   (symbol->string
+                    (syntax-e
+                     (format-id #'here "~~a/~a" (drop-subscripts #'bound))))))
   (define/with-syntax tmp-ddd (nest-ellipses #'tmp-id depth))
   (define/with-syntax binder-ddd (nest-ellipses #'max-binder0 depth))
 
@@ -318,37 +330,3 @@
             (define/with-syntax bound-ddd cached)
             (define-syntax #,(format-id #'bound "  is-derived-~a  " #'bound)
               (derived)))))
-
-
-#|
-(require syntax/parse/experimental/private/substitute)
-;; Not very clean, but syntax/parse/experimental/template should export it :-(
-(define (stolen-current-template-metafunction-introducer)
-  ((eval #'current-template-metafunction-introducer
-         (module->namespace 'syntax/parse/experimental/private/substitute))))
-
-;; Note: define-unhygienic-template-metafunction probably only works correctly
-;; when the metafunction is defined in the same file as it is used. The macro
-;; which is built using that or other metafunctions can be used anywhere,
-;; though. This is because we use a hack to guess what the old-mark from
-;; syntax/parse/experimental/private/substitute is.
-(define-syntax (define-unhygienic-template-metafunction xxx)
-  (syntax-case xxx ()
-    [(mee (name stx) . code)
-     (datum->syntax
-      #'mee
-      `(define-template-metafunction (,#'name ,#'tmp-stx)
-         (syntax-case ,#'tmp-stx ()
-           [(self . _)
-            (let* ([zero (datum->syntax #f 'zero)]
-                   [normal ((,#'stolen-current-template-metafunction-introducer) (quote-syntax here))
-                           #;(syntax-local-introduce
-                              (syntax-local-get-shadower
-                               (datum->syntax #f 'shadower)))]
-                   [+self (make-syntax-delta-introducer normal zero)]
-                   [+normal (make-syntax-delta-introducer normal zero)]
-                   [mark (make-syntax-delta-introducer (+normal #'self 'flip)
-                                                       zero)]
-                   [,#'stx (syntax-local-introduce (mark ,#'tmp-stx 'flip))])
-              (mark (syntax-local-introduce (let () . ,#'code))))])))]))
-|#
