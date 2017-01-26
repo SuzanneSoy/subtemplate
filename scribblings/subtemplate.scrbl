@@ -47,3 +47,9 @@ the reader shorthands @racket[#'…] and @racket[#`…].
 
 The @racketmodname[subtemplate/override] module also re-provides
 @racketmodname[stxparse-info/parse] and @racketmodname[stxparse-info/case].
+
+The @racketmodname[subtemplate/override] module also re-provides
+@racketmodname[stxparse-info/parse/experimental/template], but without
+@racket[template] and @racket[quasitemplate], which are remapped to their
+@racket[sub] equivalents, and without @racket[template/loc] and
+@racket[quasitemplate/loc], which do not have a @racket[sub] equivalent yet.

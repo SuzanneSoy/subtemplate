@@ -205,7 +205,7 @@
                         ellipsis-depth
                         check-ellipsis-count]
                        …)
-    (remove-duplicates acc #:key car))
+    (remove-duplicates acc bound-identifier=? #:key car))
 
   #`(let ()
       (derive bound binders unique-at-runtime-ids ellipsis-depth)
@@ -315,7 +315,8 @@
    #`(begin (define-temp-ids #:concise tmp-str binder-ddd)
             (define temp-cached
               (free-id-table-ref! (multi-hash-ref! derived-valvar-cache
-                                                   '(unique-at-runtime-idᵢ …)
+                                                   (list unique-at-runtime-idᵢ
+                                                         …)
                                                    (make-free-id-table))
                                   (quote-syntax bound)
                                   (destructure-stx-list* #'tmp-ddd
@@ -324,4 +325,4 @@
               (derived-valvar (quote-syntax temp-cached)))
             (define-syntax bound
               (make-syntax-mapping 'ellipsis-depth (quote-syntax temp-derived)))
-            (define-pvars bound)))) 
+            (define-pvars bound))))
