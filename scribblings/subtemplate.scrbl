@@ -44,3 +44,6 @@ The @racketmodname[subtemplate/override] module re-provides
 @racket[subtemplate] as @racket[syntax], and @racket[quasisubtemplate] as
 @racket[quasisyntax]. This allows @racketmodname[subtemplate] to be used via
 the reader shorthands @racket[#'…] and @racket[#`…].
+
+The @racketmodname[subtemplate/override] module also re-provides
+@racketmodname[stxparse-info/parse] and @racketmodname[stxparse-info/case].
