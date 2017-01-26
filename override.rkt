@@ -1,5 +1,5 @@
 #lang racket
-(require (rename-in "subtemplate.rkt"
+(require (rename-in subtemplate
                     [subtemplate syntax]
                     [quasisubtemplate quasisyntax]))
-(provide (all-from-out "subtemplate.rkt"))
+(provide (all-from-out subtemplate))
