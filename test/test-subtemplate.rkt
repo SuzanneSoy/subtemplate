@@ -1,5 +1,7 @@
 #lang racket
-(require "../subtemplate.rkt"
+(require subtemplate
+         stxparse-info/parse
+         stxparse-info/case
          phc-toolkit/untyped
          rackunit)
 
@@ -22,10 +24,69 @@
 
 |#
 
+
 (check-equal? (syntax->datum (syntax-parse #'(a b c d)
                                [(_ xⱼ zᵢ …)
                                 (subtemplate foo)]))
               'foo)
+
+(check-equal? (syntax->datum (syntax-case #'(a b c d) ()
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate foo)]))
+              'foo)
+
+(check-equal? (syntax->datum (syntax-parse #'(a b c d)
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate xⱼ)]))
+              'b)
+
+(check-equal? (syntax->datum (syntax-case #'(a b c d) ()
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate xⱼ)]))
+              'b)
+
+(check-equal? (syntax->datum (syntax-parse #'(a b c d)
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate (zᵢ …))]))
+              '(c d))
+
+(check-equal? (syntax->datum (syntax-case #'(a b c d) ()
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate (zᵢ …))]))
+              '(c d))
+
+(check-equal? (syntax->datum (syntax-parse #'(a b c d)
+                                 [(_ xⱼ zᵢ …)
+                                  (subtemplate (wᵢ …))]))
+                '(c/w d/w))
+
+(check-equal? (syntax->datum (syntax-case #'(a b c d) ()
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate (wᵢ …))]))
+              '(c/w d/w))
+
+(check-equal? (syntax->datum (syntax-parse #'(a b c d)
+                                 [(_ xⱼ zᵢ …)
+                                  (subtemplate (kⱼ wᵢ …))]))
+                '(b/k c/w d/w))
+
+(check-equal? (syntax->datum (syntax-case #'(a b c d) ()
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate (kⱼ wᵢ …))]))
+              '(b/k c/w d/w))
+
+(check-equal? (syntax->datum (syntax-parse #'(a b c d)
+                                 [(_ xⱼ zᵢ …)
+                                  (subtemplate (xⱼ kⱼ (zᵢ wᵢ) …))]))
+                '(b b/k (c c/w) (d d/w)))
+
+(check-equal? (syntax->datum (syntax-case #'(a b c d) ()
+                               [(_ xⱼ zᵢ …)
+                                (subtemplate (xⱼ kⱼ (wᵢ zᵢ) …))]))
+              '(b b/k (c/w c) (d/w d)))
+
+
+
 
 #;(let ()
   (syntax-parse #'a #;(syntax-parse #'(a b c d)
@@ -427,7 +488,7 @@
    (check free-identifier=? #'zz2 #'b)
 
    (check free-identifier=? #'x1 #'x2)
-   (check (∘ not free-identifier=?) #'w1 #'w2) ;; yes above, no here.
+   (check (∘ not bound-identifier=?) #'w1 #'w2) ;; yes above, no here.
    (check free-identifier=? #'foo1 #'foo2)
    (check free-identifier=? #'z1 #'z2)
    (check free-identifier=? #'p1 #'p2)
