@@ -8,7 +8,7 @@
          stxparse-info/parse/experimental/template
          syntax/id-table
          racket/syntax
-         (for-syntax phc-graph/patch-arrows
+         (for-syntax "patch-arrows.rkt"
                      stxparse-info/parse
                      racket/private/sc
                      racket/syntax
@@ -300,7 +300,8 @@
    ;; HERE: cache the define-temp-ids in the free-id-table, and make sure
    ;; that we retrieve the cached ones, so that two subtemplate within the same
    ;; syntax-case or syntax-parse clause use the same derived ids.
-   ;; TODO: mark specially those bindings bound by (derive …) so that they are
+   ;;
+   ;; We mark specially those bindings bound by (derive …) so that they are
    ;; not seen as original bindings in nested subtemplates (e.g. with an
    ;; "unsyntax"), otherwise that rule may not hold anymore, e.g.
    ;; (syntax-parse #'(a b c)

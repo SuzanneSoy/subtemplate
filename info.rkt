@@ -2,7 +2,7 @@
 (define collection "subtemplate")
 (define deps '("base"
                "rackunit-lib"
-               "backport-template-pr1514"
+               "backport-template-pr1514" ;; for the documentation only
                "phc-toolkit"
                "srfi-lite-lib"
                "stxparse-info"))
