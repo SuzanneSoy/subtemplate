@@ -8,7 +8,7 @@
                "stxparse-info"))
 (define build-deps '("scribble-lib"
                      "racket-doc"))
-(define scribblings '(("scribblings/subtemplate.scrbl" ())))
+(define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
 (define pkg-desc "Description Here")
 (define version "0.0")
 (define pkg-authors '(georges))

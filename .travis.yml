@@ -20,8 +20,8 @@ env:
     # Supply more than one RACKET_VERSION (as in the example below) to
     # create a Travis-CI build matrix to test against multiple Racket
     # versions.
-    - RACKET_VERSION=6.0
-    - RACKET_VERSION=6.1
+    #- RACKET_VERSION=6.0
+    #- RACKET_VERSION=6.1
     - RACKET_VERSION=6.1.1
     - RACKET_VERSION=6.2
     - RACKET_VERSION=6.3
@@ -29,6 +29,7 @@ env:
     - RACKET_VERSION=6.5
     - RACKET_VERSION=6.6
     - RACKET_VERSION=6.7
+    - RACKET_VERSION=6.8
     - RACKET_VERSION=HEAD
 
 matrix:
@@ -50,9 +51,11 @@ before_script:
 # `raco pkg install --deps search-auto` to install any required
 # packages without it getting stuck on a confirmation prompt.
 script:
- - raco test -x -p subtemplate
+ - raco test -p subtemplate
+ - raco setup --check-pkg-deps --pkgs subtemplate
+ - raco pkg install doc-coverage
+ - raco doc-coverage subtemplate
+ - raco pkg install --deps search-auto cover cover-codecov
+ - raco cover -b -f codecov -d $TRAVIS_BUILD_DIR/coverage .
 
 after_success:
- - raco setup --check-pkg-deps --pkgs subtemplate
- - raco pkg install --deps search-auto cover cover-coveralls
- - raco cover -b -f coveralls -d $TRAVIS_BUILD_DIR/coverage .

@@ -171,7 +171,8 @@
             (car depths)
             #'check-ellipsis-count-ddd))))
 
-(define-for-syntax/case-args ((sub*template tmpl-form) (self . tmpl))
+(define-for-syntax/case-args ((sub*template tmpl-form)
+                               (self tmpl . maybe-props))
   (define acc '())
 
   ;; Finds identifiers of the form zᵢ, and return a list of existing xᵢ bindings
@@ -195,7 +196,7 @@
   ;; like (quasitemplate . tmpl)
   (define result
     (quasisyntax/top-loc #'self
-      (#,tmpl-form . tmpl)))
+      (#,tmpl-form tmpl . maybe-props)))
   ;; Make sure that we remove duplicates, otherwise we'll get errors if we
   ;; define the same derived id twice.
   (define/with-syntax ([bound
