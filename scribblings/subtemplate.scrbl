@@ -36,7 +36,7 @@
  @racket[syntax/parse] or @racket[racket/base], respectively.
 }
 
-@subsection{Overriding the default @racket[#'…] and @racket[#`…]}
+@section{Overriding the default @racket[#'…] and @racket[#`…]}
 
 @defmodule[subtemplate/override]
 
