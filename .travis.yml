@@ -46,7 +46,7 @@ script:
  - raco setup --check-pkg-deps --pkgs subtemplate
  - raco pkg install doc-coverage
  - raco doc-coverage subtemplate
- - raco pkg install --deps search-auto cover cover-codecov
- - raco cover -b -f codecov -d $TRAVIS_BUILD_DIR/coverage .
+ #- raco pkg install --deps search-auto cover cover-codecov
+ #- raco cover -b -f codecov -d $TRAVIS_BUILD_DIR/coverage .
 
 after_success:
