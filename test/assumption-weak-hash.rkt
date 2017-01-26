@@ -18,7 +18,7 @@
                    (gensym)))
     (displayln (hash->list h))
     (all-eq? (for/list ([range-b (in-range 5)])
-               ;(collect-garbage)
+               (collect-garbage)
                ;(collect-garbage)
                ;(collect-garbage)
                (hh)))))
