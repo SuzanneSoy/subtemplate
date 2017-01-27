@@ -1,9 +1,11 @@
 #lang racket
 (require subtemplate
          stxparse-info/parse
+         stxparse-info/parse/experimental/template
          stxparse-info/case
          phc-toolkit/untyped
-         rackunit)
+         rackunit
+         syntax/macro-testing)
 
 #|
 (define-syntax (tst stx)
@@ -23,7 +25,6 @@
               '(#f yᵢ))
 
 |#
-
 
 (check-equal? (syntax->datum (syntax-parse #'(a b c d)
                                [(_ xⱼ zᵢ …)
@@ -94,14 +95,14 @@
 
 
 
-#;(let ()
-    (syntax-parse #'a #;(syntax-parse #'(a b c d)
-                          [(_ xⱼ zᵢ …)
-                           (list (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))
-                                 (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …)))])
-      [_ #;(([x1 w1] foo1 [z1 p1] [zz1 pp1])
-            ([x2 w2] foo2 [z2 p2] [zz2 pp2]))
-         (check bound-identifier=? #'x1 #'x2)]))
+(let ()
+  (syntax-parse (syntax-parse #'(a b c d)
+                  [(_ xⱼ zᵢ …)
+                   (list (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …))
+                         (subtemplate ([xⱼ wⱼ] foo [zᵢ pᵢ] …)))])
+    [(([x1 w1] foo1 [z1 p1] [zz1 pp1])
+      ([x2 w2] foo2 [z2 p2] [zz2 pp2]))
+     (check bound-identifier=? #'x1 #'x2)]))
 
 (syntax-parse (syntax-parse #'(a b c d)
                 [(_ xⱼ zᵢ …)
@@ -344,25 +345,19 @@
    (check (∘ not bound-identifier=?) #'b3 #'b4)
    (check (∘ not bound-identifier=?) #'c3 #'c4)])
 
-#;(map syntax->datum
-       (syntax-parse #'(a b c)
-         [(xᵢ …)
-          (list (syntax-parse #'(d)
-                  [(pᵢ …) #`(#,(quasisubtemplate (xᵢ … pᵢ … zᵢ …))
-                             #,(quasisubtemplate (xᵢ … pᵢ … zᵢ …)))])
-                (syntax-parse #'(e)
-                  [(pᵢ …) (quasisubtemplate (xᵢ … pᵢ … zᵢ …))]))]))
+;; Incompatible ellipsis counts
+(begin
+  (check-exn #rx"incompatible ellipsis match counts for subscripted variables"
+             (λ ()
+               (syntax-case #'([a b c] [d]) ()
+                 [([xᵢ …] [pᵢ …])
+                  (quasisubtemplate ([xᵢ …] [pᵢ …] [zᵢ …]))])))
 
-#;(syntax->datum
-   (syntax-parse #'(a b c)
-     [(xᵢ …)
-      (quasisubtemplate (yᵢ …
-                            #,(syntax-parse #'(d)
-                                [(pᵢ …) (quasisubtemplate (pᵢ … zᵢ …))])
-                            ;; GIVES WRONG ID (re-uses the one above, shouldn't):
-                            #,(syntax-parse #'(e)
-                                [(pᵢ …) (quasisubtemplate (pᵢ … zᵢ …))])
-                            wᵢ …))]))
+  (check-equal? (syntax->datum
+                 (syntax-case #'([a b c] [d]) ()
+                   [([xᵢ …] [pᵢ …])
+                    (quasisubtemplate ([xᵢ …] [pᵢ …]))]))
+                '([a b c] [d])))
 
 (syntax-parse (syntax-parse #'(a b c)
                 [(xᵢ …)
@@ -600,7 +595,7 @@
    (check (∘ not bound-identifier=?) #'p1 #'w1)
    (check (∘ not bound-identifier=?) #'p1 #'pp1)])
 
-(check-exn #px"incompatible ellipsis match counts for template"
+(check-exn #px"incompatible ellipsis match counts for subscripted variables"
            (λ ()
              (syntax-parse #'()
                [()
@@ -676,3 +671,417 @@
                 ([a a/y])
                 ([a a/y] [b b/y])
                 ([c c/y] [d d/y] [e e/y] [f f/y])))
+
+;; ~optional
+(begin
+  ;; whole opt present, yᵢ ... ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'([(1 2 3) (a b)])
+                   [({~optional ((xᵢ ...) ...)})
+                    (subtemplate {?? (yᵢ ... ...) empty})]))
+                '(1/y 2/y 3/y a/y b/y))    
+
+  ;; whole opt empty, yᵢ ... ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'()
+                   [({~optional ((xᵢ ...) ...)})
+                    (subtemplate {?? (yᵢ ... ...) empty})]))
+                'empty)
+
+  ;; whole opt present, ([xᵢ yᵢ] ...) ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'([(1 2 3) (a b)])
+                   [({~optional ((xᵢ ...) ...)})
+                    (subtemplate {?? (([xᵢ yᵢ] ...) ...) empty})]))
+                '(([1 1/y] [2 2/y] [3 3/y]) ([a a/y] [b b/y])))
+
+  ;; whole opt empty, ([xᵢ yᵢ] ...) ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'()
+                   [({~optional ((xᵢ ...) ...)})
+                    (subtemplate {?? (([xᵢ yᵢ] ...) ...) empty})]))
+                'empty)
+
+  ;; whole opt present, (yᵢ ...) ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'([(1 2 3) (a b)])
+                   [({~optional ((xᵢ ...) ...)})
+                    (subtemplate {?? ((yᵢ ...) ...) empty})]))
+                '((1/y 2/y 3/y) (a/y b/y)))
+
+  ;; whole opt empty, (yᵢ ...) ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'()
+                   [({~optional ((xᵢ ...) ...)})
+                    (subtemplate {?? (yᵢ ... ...) empty})]))
+                'empty)
+
+  ;; level-1 opt, (?@ [xᵢ yᵢ] ...)/empty ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'((1 2 3) #:kw (a b) #:kw)
+                   [({~and {~or (xᵢ ...) #:kw}} ...)
+                    (subtemplate ({?? (?@ [xᵢ yᵢ] ...) empty} ...))]))
+                '([1 1/y] [2 2/y] [3 3/y] empty [a a/y] [b b/y] empty))
+
+  ;; level-1 opt, (?@ yᵢ ...)/empty ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'((1 2 3) #:kw (a b) #:kw)
+                   [({~and {~or (xᵢ ...) #:kw}} ...)
+                    (subtemplate ({?? (?@ yᵢ ...) empty} ...))]))
+                '(1/y 2/y 3/y empty a/y b/y empty))
+
+  ;; level-1 opt, ([xᵢ yᵢ] ...)/empty ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'((1 2 3) #:kw (a b) #:kw)
+                   [({~and {~or (xᵢ ...) #:kw}} ...)
+                    (subtemplate ({?? ([xᵢ yᵢ] ...) empty} ...))]))
+                '(([1 1/y] [2 2/y] [3 3/y]) empty ([a a/y] [b b/y]) empty))
+
+  ;; level-1 opt, (xᵢ ...)/empty ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'((1 2 3) #:kw (a b) #:kw)
+                   [({~and {~or (xᵢ ...) #:kw}} ...)
+                    (quasisubtemplate
+                     ({?? (xᵢ ...) empty} ...))]))
+                '((1 2 3) empty (a b) empty))
+
+  ;; level-1 opt, (yᵢ ...)/empty ...
+  (check-equal? (syntax->datum
+                 (syntax-parse #'((1 2 3) #:kw (a b) #:kw)
+                   [({~and {~or (xᵢ ...) #:kw}} ...)
+                    (subtemplate ({?? (yᵢ ...) empty} ...))]))
+                '((1/y 2/y 3/y) empty (a/y b/y) empty))
+
+  ;; level-1 opt + same but with all #f filled in.
+  (begin
+    ;; level-1 opt + same but with all #f filled in. (wᵢ ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? (wᵢ ...) empty} ...))]))
+                  '((e f g)
+                    (h i)
+                    (j k)
+                    (l m n o)))
+  
+    ;; level-1 opt + same but with some filled/missing. (wᵢ/empty ...) ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate (({?? wᵢ empty} ...) ...))]))
+                  '((e f g)
+                    (h i)
+                    (j k)
+                    (l m n o)))
+  
+    ;; level-1 opt + same but with all #f filled in. ([wᵢ yᵢ] ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? ([wᵢ yᵢ] ...) empty} ...))]))
+                  '(([e 1/y] [f 2/y] [g 3/y])
+                    ([h h/y] [i i/y])
+                    ([j a/y] [k b/y])
+                    ([l l/y] [m m/y] [n n/y] [o o/y])))
+
+    ;; level-1 opt + same but with all #f filled in. (yᵢ ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? (yᵢ ...) empty} ...))]))
+                  '((1/y 2/y 3/y)
+                    (h/y i/y)
+                    (a/y b/y)
+                    (l/y m/y n/y o/y)))
+
+    ;; level-1 opt + same but with all #f filled in. (yᵢ ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? (?@ yᵢ ...) empty} ...))]))
+                  '(1/y 2/y 3/y h/y i/y a/y b/y l/y m/y n/y o/y))
+
+    ;; level-1 opt + same but with all #f filled in. ([wᵢ yᵢ/empty] ...) ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate (([wᵢ (?? yᵢ empty)] ...) ...))]))
+                  '(([e 1/y] [f 2/y] [g 3/y])
+                    ([h h/y] [i i/y])
+                    ([j a/y] [k b/y])
+                    ([l l/y] [m m/y] [n n/y] [o o/y])))
+
+    ;; level-1 opt + same but with all #f filled in. (yᵢ/empty ...) ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate (((?? yᵢ empty) ...) ...))]))
+                  '((1/y 2/y 3/y)
+                    (h/y i/y)
+                    (a/y b/y)
+                    (l/y m/y n/y o/y)))
+
+    ;; level-1 opt + same but with all #f filled in. yᵢ/empty ... ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) (h i) (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [((({~and {~or wᵢ:id #:k}} ...) ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ((?? yᵢ empty) ... ...))]))
+                  '(1/y 2/y 3/y
+                        h/y i/y
+                        a/y b/y
+                        l/y m/y n/y o/y)))
+
+  
+  ;; level-1 opt + same but with some level-1 #f filled in and some missing
+  (begin
+    ;; level-1 opt + same with some lvl1 filled/missing. (wᵢ ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [(({~and {~or (wᵢ ...) #:k}} ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? (wᵢ ...) empty} ...))]))
+                  '((e f g)
+                    empty
+                    (j k)
+                    (l m n o)))
+
+    ;; level-1 opt + same with some lvl1 filled/missing. (wᵢ/empty ...) ...
+    ;; Invalid because {?? wᵢ empty} ... means to iterate over the known
+    ;; elements of wᵢ, and put "empty" if one is absent. However, the whole
+    ;; sublist of wᵢ element is missing, so it does not really have a meaningful
+    ;; length for the ...
+    (check-exn
+     #rx"attribute contains non-syntax value.*#f"
+     (λ ()
+       (convert-compile-time-error
+        (check-equal? (syntax->datum
+                       (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                        [(1 2 3) #:kw (a b) #:kw])
+                         [(({~and {~or (wᵢ ...) #:k}} ...)
+                           ({~and {~or (xᵢ ...) #:kw}} ...))
+                          (subtemplate (({?? wᵢ empty} ...) ...))]))
+                      '((e f g)
+                        empty
+                        (j k)
+                        (l m n o))))))
+  
+    ;; level-1 opt + same with some lvl1 filled/missing. ([wᵢ yᵢ] ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [(({~and {~or (wᵢ ...) #:k}} ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? ([wᵢ yᵢ] ...) empty} ...))]))
+                  '(([e 1/y] [f 2/y] [g 3/y])
+                    empty
+                    ([j a/y] [k b/y])
+                    ([l l/y] [m m/y] [n n/y] [o o/y])))
+
+    ;; level-1 opt + same with some lvl1 #f filled in. (yᵢ ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [(({~and {~or (wᵢ ...) #:k}} ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? (yᵢ ...) empty} ...))]))
+                  '((1/y 2/y 3/y)
+                    empty
+                    (a/y b/y)
+                    (l/y m/y n/y o/y)))
+
+    ;; level-1 opt + same with some lvl1 #f filled in. (yᵢ ...)/empty ...
+    (check-equal? (syntax->datum
+                   (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                    [(1 2 3) #:kw (a b) #:kw])
+                     [(({~and {~or (wᵢ ...) #:k}} ...)
+                       ({~and {~or (xᵢ ...) #:kw}} ...))
+                      (subtemplate ({?? (?@ yᵢ ...) empty} ...))]))
+                  '(1/y 2/y 3/y
+                        empty
+                        a/y b/y
+                        l/y m/y n/y o/y))
+
+    ;; level-1 opt + same with some lvl1 #f filled in. ([wᵢ yᵢ/empty] ...) ...
+    ;; Invalid because {?? wᵢ emptywi} ... means to iterate over the known
+    ;; elements of wᵢ, and put "empty" if one is absent. However, the whole
+    ;; sublist of wᵢ element is missing, so it does not really have a meaningful
+    ;; length for the ...
+    (check-exn
+     #rx"attribute contains non-syntax value.*#f"
+     (λ ()
+       (convert-compile-time-error
+        (check-equal? (syntax->datum
+                       (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                        [(1 2 3) #:kw (a b) #:kw])
+                         [(({~and {~or (wᵢ ...) #:k}} ...)
+                           ({~and {~or (xᵢ ...) #:kw}} ...))
+                          (subtemplate
+                           (([(?? wᵢ emptywi) (?? yᵢ empty)] ...) ...))]))
+                      '(([e 1/y] [f 2/y] [g 3/y])
+                        ([emptywi empty] [emptywi empty])
+                        ([j a/y] [k b/y])
+                        ([l l/y] [m m/y] [n n/y] [o o/y]))))))
+
+    ;; level-1 opt + same with some lvl1 #f filled in. (yᵢ/empty ...) ...
+    ;; Invalid because {?? wᵢ empty} ... means to iterate over the known
+    ;; elements of wᵢ, and put "empty" if one is absent. However, the whole
+    ;; sublist of wᵢ element is missing, so it does not really have a meaningful
+    ;; length for the ...
+    (check-exn
+     #rx"attribute contains non-syntax value.*#f"
+     (λ ()
+       (convert-compile-time-error
+        (check-equal? (syntax->datum
+                       (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                        [(1 2 3) #:kw (a b) #:kw])
+                         [(({~and {~or (wᵢ ...) #:k}} ...)
+                           ({~and {~or (xᵢ ...) #:kw}} ...))
+                          (subtemplate (((?? yᵢ empty) ...) ...))]))
+                      '((1/y 2/y 3/y)
+                        empty
+                        (a/y b/y)
+                        (l/y m/y n/y o/y))))))
+
+    ;; level-1 opt + same with some lvl1 #f filled in. yᵢ/empty ... ...
+    ;; Invalid because {?? yᵢ empty} ... means to iterate over the known
+    ;; elements of wᵢ, and put "empty" if one is absent. However, the whole
+    ;; sublist of wᵢ element is missing, so it does not really have a meaningful
+    ;; length for the ...
+    (check-exn
+     #rx"attribute contains non-syntax value.*#f"
+     (λ ()
+       (convert-compile-time-error
+        (check-equal? (syntax->datum
+                       (syntax-parse #'([(e f g) #:k (j k) (l m n o)]
+                                        [(1 2 3) #:kw (a b) #:kw])
+                         [(({~and {~or (wᵢ ...) #:k}} ...)
+                           ({~and {~or (xᵢ ...) #:kw}} ...))
+                          (subtemplate ((?? yᵢ empty) ... ...))]))
+                      '(1/y 2/y 3/y
+                            empty
+                            a/y b/y
+                            l/y m/y n/y o/y))))))
+  
+
+  ;; level-1 opt + same with some level-2 #f filled in and some missing
+  (begin
+    ;; level-1 opt + same with some lvl2 filled/missing. (wᵢ ...)/empty ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate ({?? (wᵢ ...) empty} ...))]))
+                 '((e f g)
+                   empty
+                   (j k)
+                   (l m n o)))
+
+    ;; level-1 opt + same with some lvl2 filled/missing. (wᵢ/empty ...) ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate (({?? wᵢ empty} ...) ...))]))
+                 '((e f g)
+                   (h empty)
+                   (j k)
+                   (l m n o)))
+  
+    ;; level-1 opt + same with some lvl2 filled/missing. ([wᵢ yᵢ] ...)/empty ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate ({?? ([wᵢ yᵢ] ...) empty} ...))]))
+                 '(([e 1/y] [f 2/y] [g 3/y])
+                   empty
+                   ([j a/y] [k b/y])
+                   ([l l/y] [m m/y] [n n/y] [o o/y])))
+
+    ;; level-1 opt + same but with some #f filled in. (yᵢ ...)/empty ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate ({?? (yᵢ ...) empty} ...))]))
+                 `((1/y 2/y 3/y)
+                   (h/y ,(? symbol?
+                            (app symbol->string (regexp #rx"xᵢ[0-9]+/y"))))
+                   (a/y b/y)
+                   (l/y m/y n/y o/y)))
+
+    ;; level-1 opt + same but with some #f filled in. (yᵢ ...)/empty ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate ({?? (?@ yᵢ ...) empty} ...))]))
+                 `(1/y 2/y 3/y
+                       h/y ,(? symbol?
+                               (app symbol->string (regexp #rx"xᵢ[0-9]+/y")))
+                       a/y b/y
+                       l/y m/y n/y o/y))
+
+    ;; level-1 opt + same but with some #f filled in. ([wᵢ yᵢ/empty] ...) ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate
+                      (([(?? wᵢ emptywi) (?? yᵢ empty)] ...) ...))]))
+                 `(([e 1/y] [f 2/y] [g 3/y])
+                   ([h h/y]
+                    [emptywi
+                     ,(? symbol?
+                         (app symbol->string (regexp #rx"xᵢ[0-9]+/y")))])
+                   ([j a/y] [k b/y])
+                   ([l l/y] [m m/y] [n n/y] [o o/y])))
+
+    ;; level-1 opt + same but with some #f filled in. (yᵢ/empty ...) ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate (((?? yᵢ empty) ...) ...))]))
+                 `((1/y 2/y 3/y)
+                   (h/y ,(? symbol?
+                            (app symbol->string (regexp #rx"xᵢ[0-9]+/y"))))
+                   (a/y b/y)
+                   (l/y m/y n/y o/y)))
+
+    ;; level-1 opt + same but with some #f filled in. yᵢ/empty ... ...
+    (check-match (syntax->datum
+                  (syntax-parse #'([(e f g) (h #:k) (j k) (l m n o)]
+                                   [(1 2 3) #:kw (a b) #:kw])
+                    [((({~and {~or wᵢ:id #:k}} ...) ...)
+                      ({~and {~or (xᵢ ...) #:kw}} ...))
+                     (subtemplate ((?? yᵢ empty) ... ...))]))
+                 `(1/y 2/y 3/y
+                       h/y ,(? symbol?
+                               (app symbol->string (regexp #rx"xᵢ[0-9]+/y")))
+                       a/y b/y
+                       l/y m/y n/y o/y))))

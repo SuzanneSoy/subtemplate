@@ -2,11 +2,14 @@
 
 (require racket/require
          phc-toolkit/untyped
+         phc-toolkit/untyped-only/syntax-parse
          racket/stxparam
          stxparse-info/parse
          stxparse-info/case
          stxparse-info/current-pvars
          stxparse-info/parse/experimental/template
+         (prefix-in - stxparse-info/parse/private/residual)
+         (prefix-in dbg: stxparse-info/parse/private/runtime)
          syntax/id-table
          (subtract-in racket/syntax stxparse-info/case)
          (for-syntax "patch-arrows.rkt"
@@ -39,10 +42,18 @@
   (define (id-is-derived-valvar? id)
     (define mapping (syntax-local-value id (thunk #f)))
     (and mapping ;; … defined as syntax
-         (syntax-pattern-variable? mapping) ;; and is a syntax pattern variable
-         (derived-valvar? ;; and the pvar's valvar is derived
-          (syntax-local-value (syntax-mapping-valvar mapping)
-                              (thunk #f)))))
+         (syntax-pattern-variable? mapping) ; and is a syntax pattern variable
+         (let ()
+           (define mapping-slv
+             (syntax-local-value (syntax-mapping-valvar mapping) (thunk #f)))
+           ;; either a mapping → attribute → derived,
+           ;; or directly mapping → derived
+           (or (and (-attribute-mapping? mapping-slv) ;; is an attribute
+                    (derived-valvar? ;; and the pvar's valvar is a derived
+                     (syntax-local-value (-attribute-mapping-var mapping-slv)
+                                         (thunk #f))))
+               ;; or the pvar's valvar is derived
+               (derived-valvar? mapping-slv)))))
 
   (define/contract (string-suffix a b)
     (-> string? string? string?)
@@ -89,13 +100,19 @@
         #`(#,(nest-ellipses stx (sub1 n))
            (… …))))
 
+  (define/contract (nest-map f last n)
+    (-> (-> syntax? syntax?) syntax? exact-nonnegative-integer? syntax?)
+    (if (= n 0)
+        last
+        (f (nest-map f last (sub1 n)))))
+
   (define/contract (find-subscript-binder bound)
     (-> identifier?
         (or/c #f (list/c identifier?                     ; bound
                          (syntax/c (listof identifier?)) ; binders
                          (syntax/c (listof identifier?)) ; unique-at-runtime ids
-                         exact-nonnegative-integer?      ; ellipsis-depth
-                         syntax?)))                      ; check-ellipsis-count
+                         exact-nonnegative-integer?)))   ; ellipsis-depth
+
     (let/cc return
       ;; EARLY RETURN (already a pattern variable)
       (when (syntax-pattern-variable?
@@ -160,23 +177,67 @@
                                     (syntax->list #'(binder …)))
                             bound))
       
-      ;; generate code to check that the bindings have all the same
-      ;; ellipsis count, by simply generating a dummy syntax object, with
-      ;; all the given binders nested under the right number of ellipses.
-      (define/with-syntax check-ellipsis-count-ddd
-        (nest-ellipses #'(binder …) (car depths)))
-
       ;; FINAL RETURN (list of same-depth binders + their depth)
-      (list bound
-            #'(binder …)
-            #'(unique-at-runtime-id …)
-            (car depths)
-            #'check-ellipsis-count-ddd))))
+      (return (list bound
+                    #'(binder …)
+                    #'(unique-at-runtime-id …)
+                    (car depths))))))
+
+(define/contract (attribute-val/c depth [bottom-predicate any/c])
+  (->* {exact-nonnegative-integer?} {flat-contract?} flat-contract?)
+  (flat-named-contract
+   (build-compound-type-name 'attribute-val/c depth bottom-predicate)
+   (λ (l)
+     (if (= depth 0)
+         (or (eq? l #f) (bottom-predicate l))
+         (or (eq? l #f)
+             (and (list? l)
+                  (andmap (attribute-val/c (sub1 depth)) l)))))))
+
+;; ellipsis-count/c works with attributes too, including missing (optional)
+;; elements in the lists, at any level.
+(define/contract (ellipsis-count/c depth [bottom-predicate any/c])
+  (->* {exact-nonnegative-integer?} {flat-contract?} flat-contract?)
+  (flat-named-contract
+   (build-compound-type-name 'ellipsis-count/c depth bottom-predicate)
+   (λ (l*)
+     (true?
+      (and (list? l*)
+           (let ([l* (filter identity l*)])
+             (if (= depth 0)
+                 (andmap bottom-predicate l*)
+                 (let ([lengths (map length l*)])
+                   (and (or (< (length lengths) 2) (apply = lengths))
+                        (or (empty? l*)
+                            (apply andmap
+                                   (λ sublists
+                                     ((ellipsis-count/c (sub1 depth)
+                                                        bottom-predicate)
+                                      sublists))
+                                   l*)))))))))))
+
+(define/contract (map-merge-stx-depth f l* depth)
+  (->i {[f (-> (listof any/c) any/c)]
+        [l* (depth) (ellipsis-count/c depth any/c)]
+        [depth exact-nonnegative-integer?]}
+       {result (depth l*)
+               (λ (r) ((ellipsis-count/c depth) (cons r l*)))})
+  (let ([l* (filter identity l*)])
+    (if (= depth 0)
+        (f l*)
+        (if (empty? l*)
+            #f
+            (apply map
+                   (λ sublists
+                     (map-merge-stx-depth f
+                                          sublists
+                                          (sub1 depth)))
+                   l*)))))
 
 (define-for-syntax (sub*template self-form tmpl-form)
   (syntax-parser
     [(self {~optional {~and #:force-no-stxinfo force-no-stxinfo}}
-           {~optional {~and #:props maybe-props}}
+           {~optkw #:props (prop:id ...)}
            ;; #: marks end of options (so that we can have implicit ?@ later)
            {~optional #:}
            tmpl)
@@ -224,23 +285,27 @@
      ;; like (quasitemplate . tmpl)
      (define result
        (quasisyntax/top-loc #'self
-         (#,tmpl-form tmpl #,@(when-attr maybe-props #'{#:props maybe-props}))))
+         (#,tmpl-form tmpl
+                      #,@(if (attribute props) #'(#:props (prop ...)) #'()))))
      ;; Make sure that we remove duplicates, otherwise we'll get errors if we
      ;; define the same derived id twice.
      (define/with-syntax ([bound
-                           binders
+                           (binder …)
                            unique-at-runtime-ids
-                           ellipsis-depth
-                           check-ellipsis-count]
+                           ellipsis-depth]
                           …)
        (remove-duplicates acc bound-identifier=? #:key car))
 
-     #`(let ()
-         (derive bound binders unique-at-runtime-ids ellipsis-depth)
+     (define/with-syntax whole-form-id (generate-temporary 'whole-subtemplate))
+
+     #`(let-values ()
+         (define-values (whole-form-id) (quote-syntax #,this-syntax))
+         (derive
+          bound (binder …) unique-at-runtime-ids ellipsis-depth whole-form-id)
          …
-         (let ()
-           ;; no-op, just to raise an error when they are incompatible
-           #'(check-ellipsis-count …) ;; TODO: allow #f values for ~optional in syntax/parse ;;;;;;;;;;;;;;
+         (let-values ()
+           ;; check that all the binders for a given bound are compatible.
+           ((ellipsis-count/c ellipsis-depth) (list (attribute* binder) …)) …
            ;; actually call template or quasitemplate
            #,result))]))
 
@@ -261,36 +326,54 @@
   (for ([k (in-list keys)]) (hash-ref! h k val))
   val)
 
-(define/contract ((stx-list*+stx/c depth) l)
-  (-> exact-nonnegative-integer? (-> any/c boolean?))
-  (if (= depth 0)
-      (syntax? l)
-      (and (syntax? l)
-           (syntax->list l)
-           (andmap (λ (lᵢ) ((stx-list*+stx/c (sub1 depth)) lᵢ))
-                   (syntax->list l)))))
+(define formattable/c (or/c number? string? symbol? bytes?))
 
-(define/contract ((list*+stx/c depth) l)
-  (-> exact-nonnegative-integer? (-> any/c boolean?))
-  (if (= depth 0)
-      (syntax? l)
-      (and (list? l)
-           (andmap (λ (lᵢ) ((list*+stx/c (sub1 depth)) lᵢ))
-                   l))))
+(define/contract
+  (generate-nested-ids depth bound binder₀ format l* attribute-names whole-form)
+  (->i {[depth exact-nonnegative-integer?]
+        [bound identifier?]
+        [binder₀ identifier?]
+        [format (-> formattable/c string?)]
+        [l* (depth) (listof (attribute-val/c depth))]
+        [attribute-names (l*) (and/c (listof identifier?)
+                                     (λ (a) (= (length l*) (length a))))]
+        [whole-form syntax?]}
+       #:pre (l* depth attribute-names whole-form bound)
+       (if ((ellipsis-count/c depth) l*)
+           #t
+           (raise-syntax-error
+            (syntax-case whole-form ()
+              [(self . _) (syntax-e #'self)]
+              [_ 'subtemplate])
+            "incompatible ellipsis match counts for subscripted variables:"
+            whole-form
+            bound
+            attribute-names))
+       {result (depth l*)
+               (and/c (attribute-val/c depth identifier?)
+                      (λ (r) ((ellipsis-count/c depth) (cons r l*))))})
 
-(define/contract (destructure-stx-list* l depth)
-  (->i ([l (depth) (stx-list*+stx/c depth)]
-        [depth exact-nonnegative-integer?])
-       [range (depth) (list*+stx/c depth)])
-  (if (= depth 0)
-      l
-      (stx-map (λ (lᵢ) (destructure-stx-list* lᵢ (sub1 depth)))
-               l)))
+  
+  (define (gen bottom*)
+    (define v
+      (let ([vs (filter-map (λ (v)
+                              (cond [(formattable/c v) v]
+                                    [(formattable/c (syntax-e v)) (syntax-e v)]
+                                    [else #f]))
+                            bottom*)])
+        (if (empty? vs)
+            (syntax-e (generate-temporary binder₀))
+            (car vs))))
+    (datum->syntax ((make-syntax-introducer) bound)
+                   (string->symbol (format v))))
+
+  (map-merge-stx-depth gen l* depth))
 
 (define-syntax/case (derive bound
                             (binder₀ binderᵢ …)
                             (unique-at-runtime-idᵢ …)
-                            ellipsis-depth) ()
+                            ellipsis-depth
+                            whole-form-id) ()
   (define depth (syntax-e #'ellipsis-depth))
   (define/with-syntax bound-ddd (nest-ellipses #'bound depth))
   (define/with-syntax tmp-id
@@ -327,7 +410,16 @@
                                            (string-length subscripts))
                                         (string-length subscripts)))
    (define/with-syntax temp-derived (generate-temporary #'bound))
+   (define/with-syntax temp-valvar (generate-temporary #'bound))
    (define/with-syntax temp-cached (generate-temporary #'bound))
+   ;; works only for syntax patterns, luckily that's all we need since we
+   ;; produce a tree of (possibly missing) identifiers.
+   (define/with-syntax copy-attribute-pattern
+     ;; the ~and is important, to prevent the nested ~or from being treated as
+     ;; an ellipsis-head pattern.
+     (nest-map (λ (pat) #`{~or #f ({~and #,pat} (... ...))})
+               #'{~or #f {~var bound id}}
+               (syntax-e #'ellipsis-depth)))
    ;; HERE: cache the define-temp-ids in the free-id-table, and make sure
    ;; that we retrieve the cached ones, so that two subtemplate within the same
    ;; syntax-case or syntax-parse clause use the same derived ids.
@@ -342,17 +434,40 @@
    ;;                       zᵢ …))])
    ;; the test above is not exactly right (zᵢ will still have the correct
    ;; binding), but it gives the general idea.
-   #`(begin (define-temp-ids #:concise tmp-str binder-ddd)
-            (define temp-cached
-              (free-id-table-ref! (multi-hash-ref! derived-valvar-cache
-                                                   (list unique-at-runtime-idᵢ
-                                                         …)
-                                                   (make-free-id-table))
-                                  (quote-syntax bound)
-                                  (destructure-stx-list* #'tmp-ddd
-                                                         'ellipsis-depth)))
-            (define-syntax temp-derived
-              (derived-valvar (quote-syntax temp-cached)))
-            (define-syntax bound
-              (make-syntax-mapping 'ellipsis-depth (quote-syntax temp-derived)))
-            (define-pvars bound))))
+   #`(begin ;(define-temp-ids #:concise tmp-str binder-ddd) ;;;;;;;;;;;;;;;;;;;TODO: should fuse all the binder-ddd, so that if any one is not #f for a sublist, that sublist is generated.
+       ;; TODO: we should check that if the hash-table access worked,
+       ;; any new pvars are compatible with the old ones on which the cache is
+       ;; based (in the sense of "no new non-#f positions")
+       (define temp-cached
+         (free-id-table-ref! (multi-hash-ref! derived-valvar-cache
+                                              (list unique-at-runtime-idᵢ
+                                                    …)
+                                              (make-free-id-table))
+                             (quote-syntax bound)
+                             (λ ()
+                               (generate-nested-ids 'ellipsis-depth
+                                                    (quote-syntax bound)
+                                                    (quote-syntax binder₀)
+                                                    (λ (v) (format tmp-str v))
+                                                    (list (attribute* binder₀)
+                                                          (attribute* binderᵢ)
+                                                          …)
+                                                    (list (quote-syntax binder₀)
+                                                          (quote-syntax binderᵢ)
+                                                          …)
+                                                    whole-form-id))))
+       #;(define-syntax temp-derived
+         (derived-valvar (quote-syntax temp-cached)))
+       #;(define-raw-attribute bound
+         temp-valvar
+         temp-cached ;temp-derived
+         ellipsis-depth
+         #t)
+       ;(define temp-cached (attribute* binder₀))
+       ;; manually creating the attribute with (make-attribute-mapping …)
+       ;; works, but the attribute behaves in a bogus way when put inside
+       ;; an (?@ yᵢ ...). I must be missing some step in the construction
+       ;; of the attribute
+       ;; TODO: I used make-attribute-mapping somewhere else, find it and change it !!!!!
+       (define/syntax-parse copy-attribute-pattern temp-cached)
+       (define-pvars bound))))

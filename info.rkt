@@ -5,7 +5,8 @@
                "backport-template-pr1514" ;; for the documentation only
                "phc-toolkit"
                "srfi-lite-lib"
-               "stxparse-info"))
+               "stxparse-info"
+               "alexis-util"))
 (define build-deps '("scribble-lib"
                      "racket-doc"))
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
