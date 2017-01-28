@@ -189,20 +189,47 @@
    (build-compound-type-name 'attribute-val/c depth bottom-predicate)
    (λ (l)
      (if (= depth 0)
-         (or (eq? l #f) (bottom-predicate l))
-         (or (eq? l #f)
+         (or (false? l) (bottom-predicate l))
+         (or (false? l)
              (and (list? l)
                   (andmap (attribute-val/c (sub1 depth)) l)))))))
 
-;; ellipsis-count/c works with attributes too, including missing (optional)
-;; elements in the lists, at any level.
-(define/contract (ellipsis-count/c depth [bottom-predicate any/c])
-  (->* {exact-nonnegative-integer?} {flat-contract?} flat-contract?)
+;; Checks that all the given attribute values have the same structure.
+;; 
+;; ellipsis-count/c works with the value of pattern variables and of attributes
+;; too, including those missing (optional) elements in the lists, at any level.
+;; 
+;; The lists must have the same lengths across all attribute values, including
+;; the missing #f elements.
+;;
+;; If same-shape is #true, a #f in one attribute value implies #f in all other
+;; attribute values at the same position. The same-shape check is not
+;; performed on the bottommost #f values (as they do not influence the shape of
+;; the tree).
+(define/contract (ellipsis-count/c depth
+                                   [bottom-predicate any/c]
+                                   #:same-shape [same-shape #f])
+  (->* {exact-nonnegative-integer?}
+       {flat-contract?
+        #:same-shape boolean?}
+       flat-contract?)
+  ;; Must be lazy, otherwise ellipsis-count/c would immediately call itself
+  (define (recur/c sublists)
+    ((ellipsis-count/c (sub1 depth) bottom-predicate #:same-shape same-shape)
+     sublists))
   (flat-named-contract
-   (build-compound-type-name 'ellipsis-count/c depth bottom-predicate)
+   (apply build-compound-type-name
+          (list* 'ellipsis-count/c depth bottom-predicate
+                 (if same-shape
+                     (list '#:same-shape same-shape)
+                     (list))))
    (λ (l*)
      (true?
       (and (list? l*)
+           (if (and same-shape (> depth 0))
+               (or (andmap false? l*)          ;; all #f
+                   (andmap identity l*)) ;; all non-#f
+               #t)
            (let ([l* (filter identity l*)])
              (if (= depth 0)
                  (andmap bottom-predicate l*)
@@ -211,9 +238,7 @@
                         (or (empty? l*)
                             (apply andmap
                                    (λ sublists
-                                     ((ellipsis-count/c (sub1 depth)
-                                                        bottom-predicate)
-                                      sublists))
+                                     (recur/c sublists))
                                    l*)))))))))))
 
 (define/contract (map-merge-stx-depth f l* depth)
@@ -323,6 +348,8 @@
       any/c)
   (define val (or (for/or ([k (in-list keys)]) (hash-ref h k #f))
                   to-set))
+  ;; Set the existing value (or new to-set if none) on all keys which
+  ;; are not present in the hash table.
   (for ([k (in-list keys)]) (hash-ref! h k val))
   val)
 
@@ -412,6 +439,8 @@
    (define/with-syntax temp-derived (generate-temporary #'bound))
    (define/with-syntax temp-valvar (generate-temporary #'bound))
    (define/with-syntax temp-cached (generate-temporary #'bound))
+   (define/with-syntax temp-generated (generate-temporary #'bound))
+   (define/with-syntax temp-id-table (generate-temporary #'bound))
    ;; works only for syntax patterns, luckily that's all we need since we
    ;; produce a tree of (possibly missing) identifiers.
    (define/with-syntax copy-attribute-pattern
@@ -434,40 +463,85 @@
    ;;                       zᵢ …))])
    ;; the test above is not exactly right (zᵢ will still have the correct
    ;; binding), but it gives the general idea.
-   #`(begin ;(define-temp-ids #:concise tmp-str binder-ddd) ;;;;;;;;;;;;;;;;;;;TODO: should fuse all the binder-ddd, so that if any one is not #f for a sublist, that sublist is generated.
+   #`(begin
+       (define-values (temp-generated)
+         (generate-nested-ids 'ellipsis-depth
+                              (quote-syntax bound)
+                              (quote-syntax binder₀)
+                              (λ (v) (format tmp-str v))
+                              (list (attribute* binder₀)
+                                    (attribute* binderᵢ)
+                                    …)
+                              (list (quote-syntax binder₀)
+                                    (quote-syntax binderᵢ)
+                                    …)
+                              whole-form-id))
+       (define-values (temp-id-table)
+         (multi-hash-ref! derived-valvar-cache
+                          (list unique-at-runtime-idᵢ
+                                …)
+                          (make-free-id-table)))
+       (define-values (temp-cached)
+         (free-id-table-ref! temp-id-table
+                             (quote-syntax bound)
+                             temp-generated))
        ;; TODO: we should check that if the hash-table access worked,
        ;; any new pvars are compatible with the old ones on which the cache is
        ;; based (in the sense of "no new non-#f positions")
-       (define temp-cached
-         (free-id-table-ref! (multi-hash-ref! derived-valvar-cache
-                                              (list unique-at-runtime-idᵢ
-                                                    …)
-                                              (make-free-id-table))
-                             (quote-syntax bound)
-                             (λ ()
-                               (generate-nested-ids 'ellipsis-depth
-                                                    (quote-syntax bound)
-                                                    (quote-syntax binder₀)
-                                                    (λ (v) (format tmp-str v))
-                                                    (list (attribute* binder₀)
-                                                          (attribute* binderᵢ)
-                                                          …)
-                                                    (list (quote-syntax binder₀)
-                                                          (quote-syntax binderᵢ)
-                                                          …)
-                                                    whole-form-id))))
-       #;(define-syntax temp-derived
-         (derived-valvar (quote-syntax temp-cached)))
-       #;(define-raw-attribute bound
-         temp-valvar
-         temp-cached ;temp-derived
-         ellipsis-depth
-         #t)
-       ;(define temp-cached (attribute* binder₀))
+
+       ;; Check that all derived pvars for this subscript from all binders
+       ;; have the same shape, i.e. we wouldn't want some elements to be missing
+       ;; (as in ~optional) at some position from one derived pvar, but not from
+       ;; others. This check implies that the original binder used did not
+       ;; introduce new elements compared to the binders used for other derived
+       ;; pvars, e.g:
+       ;; (syntax-parse #'([1 2 3] #f)
+       ;;   [({~and {~or (xᵢ ...) #f}} ...)
+       ;;    (subtemplate ({?? (yᵢ ...) _} ...)) ;; => ((1/y 2/y 3/y) _)
+       ;;    (syntax-case #'([a b c] [d e]) ()
+       ;;      ;; introduces elements [d e] which were unknown when yᵢ was
+       ;;      ;; generated:
+       ;;      [((wᵢ ...) ...)
+       ;;       ;; Would give ((a/z b/z c/z) (d/z e/z)), but this is
+       ;;       ;; inconsistent with the shape of yᵢ.
+       ;;       (subtemplate ({?? (zᵢ ...) _} ...))])])
+       ;; The check must also compare temp-generated, even if it was not
+       ;; assigned to #'bound, so that it also cathes the error if we replace
+       ;; zᵢ with yᵢ in the example above.
+       (unless ((ellipsis-count/c ellipsis-depth #:same-shape #t)
+                (cons temp-generated
+                      (free-id-table-map temp-id-table (λ (k v) v))))
+         ;; TODO: For now this will just blow up, a better error message would
+         ;; be nice. Especially saying which one failed.
+         (raise-syntax-error
+          'sublist
+          (format (string-append
+                   "some derived variables do not have the same ellipsis"
+                   " shape\n"
+                   "  depth: ~a\n"
+                   "  attributes...:\n"
+                   "   ~a\n"
+                   "  attribute ~a if it were generated here...:\n"
+                   "   ~a")
+                  'ellipsis-depth
+                  (string-join (free-id-table-map
+                                temp-id-table
+                                (λ (k v)
+                                  (format "~a => ~a"
+                                          (syntax-e k)
+                                          (syntax->datum
+                                           (datum->syntax #f v)))))
+                               "\n   ")
+                  'bound
+                  (syntax->datum
+                   (datum->syntax #f temp-generated)))
+          (quote-syntax whole-form-id)
+          (quote-syntax bound)
+          (free-id-table-map temp-id-table (λ (k v) k))))
+       
        ;; manually creating the attribute with (make-attribute-mapping …)
        ;; works, but the attribute behaves in a bogus way when put inside
        ;; an (?@ yᵢ ...). I must be missing some step in the construction
        ;; of the attribute
-       ;; TODO: I used make-attribute-mapping somewhere else, find it and change it !!!!!
        (define/syntax-parse copy-attribute-pattern temp-cached)
        (define-pvars bound))))

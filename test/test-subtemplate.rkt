@@ -1085,3 +1085,35 @@
                                (app symbol->string (regexp #rx"xᵢ[0-9]+/y")))
                        a/y b/y
                        l/y m/y n/y o/y))))
+
+;; Incompatible shapes of different derived attributes:
+(check-exn
+ #rx"some derived variables do not have the same ellipsis shape"
+ (λ ()
+   (convert-compile-time-error
+    (syntax-parse #'([1 2 3] #f)
+      [({~and {~or (xᵢ ...) #f}} ...)
+       (subtemplate ({?? (yᵢ ...) _} ...)) ;; => ((1/y 2/y 3/y) _)
+       (syntax-case #'([a b c] [d e]) ()
+         ;; introduces elements [d e] which were unknown when yᵢ was
+         ;; generated:
+         [((wᵢ ...) ...)
+          ;; Would give ((a/z b/z c/z) (d/z e/z)), but this is
+          ;; inconsistent with the shape of yᵢ.
+          (subtemplate ({?? (zᵢ ...) _} ...))])]))))
+
+;; Incompatible shapes of the same attribute if it were generated at two
+;; different points.
+(check-exn
+ #rx"some derived variables do not have the same ellipsis shape"
+ (λ ()
+   (syntax-parse #'([1 2 3] #f)
+     [({~and {~or (xᵢ ...) #f}} ...)
+      (subtemplate ({?? (yᵢ ...) _} ...)) ;; => ((1/y 2/y 3/y) _)
+      (syntax-case #'([a b c] [d e]) ()
+        ;; introduces elements [d e] which were unknown when yᵢ was
+        ;; generated:
+        [((wᵢ ...) ...)
+         ;; Would give ((a/z b/z c/z) (d/z e/z)), but this is
+         ;; inconsistent with the shape of yᵢ.
+         (subtemplate ({?? (yᵢ ...) _} ...))])])))
