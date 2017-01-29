@@ -1,24 +1,20 @@
 #lang racket/base
 
-(provide valvar+props
-         valvar+props-valvar
-         valvar+props-properties
-         pvar->valvar+props
-         pvar-property)
+(provide (struct-out derived-valvar)
+         id-is-derived-valvar?)
 
 (require racket/function
-         racket/contract
          racket/private/sc
          (for-template (prefix-in - stxparse-info/parse/private/residual)))
 
 ;; Act like a syntax transformer, but which is recognizable via the
 ;; derived-pattern-variable? predicate.
-(struct valvar+props (valvar properties)
+(struct derived-valvar (valvar)
   #:property prop:procedure
   (λ (self stx)
-    #`(#%expression #,(valvar+props-valvar self))))
+    #`(#%expression #,(derived-valvar-valvar self))))
 
-(define (pvar->valvar+props id)
+(define (id-is-derived-valvar? id)
   (define mapping (syntax-local-value id (thunk #f)))
   (and mapping ;; … defined as syntax
        (syntax-pattern-variable? mapping) ; and is a syntax pattern variable
@@ -28,21 +24,8 @@
          ;; either a mapping → attribute → derived,
          ;; or directly mapping → derived
          (or (and (-attribute-mapping? mapping-slv) ;; is an attribute
-                  (let ([attribute-slv (syntax-local-value
-                                        (-attribute-mapping-var mapping-slv)
-                                        (thunk #f))])
-                    ;; and the pvar's valvar is a derived
-                    (and (valvar+props? attribute-slv)
-                         attribute-slv))
+                  (derived-valvar? ;; and the pvar's valvar is a derived
+                   (syntax-local-value (-attribute-mapping-var mapping-slv)
+                                       (thunk #f))))
              ;; or the pvar's valvar is derived
-             (and (valvar+props? mapping-slv)
-                  mapping-slv))))))
-
-(define/contract (pvar-property id property)
-  (-> identifier? symbol? any/c)
-  (let ([valvar+props (valvar+props-properties id)])
-    (and valvar+props
-         (let ([properties (valvar+props-properties valvar+props)])
-         (hash? properties)
-         (immutable? properties)
-         (hash-ref properties property #f)))))
+             (derived-valvar? mapping-slv)))))
