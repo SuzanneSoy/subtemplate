@@ -6,7 +6,8 @@
                "phc-toolkit"
                "srfi-lite-lib"
                "stxparse-info"
-               "alexis-util"))
+               "alexis-util"
+               "scope-operations"))
 (define build-deps '("scribble-lib"
                      "racket-doc"))
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))

@@ -15,4 +15,5 @@
                        stxparse-info/parse
                        stxparse-info/parse/experimental/template
                        stxparse-info/case
-                       racket/syntax))
+                       racket/syntax)
+         (rename-out [... …]))

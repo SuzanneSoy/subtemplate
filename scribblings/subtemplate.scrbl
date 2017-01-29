@@ -84,7 +84,7 @@ compile-time and run-time performance will not be as good as with
 Despite the rather extensive test suite, there are probably a few bugs lurking,
 please report them to @url{https://github.com/jsmaniac/subtemplate/issues}.
 
-@subsection{Omitted elements in attributes (via @racket[~optional]}
+@subsection{Omitted elements in attributes (via @racket[~optional])}
 
 When some values are missing in the ellipses of a template variable, e.g. via
 @racket[~optional], @racket[subtemplate] combines all the existing bound

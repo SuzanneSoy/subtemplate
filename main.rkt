@@ -12,7 +12,9 @@
          (prefix-in dbg: stxparse-info/parse/private/runtime)
          syntax/id-table
          (subtract-in racket/syntax stxparse-info/case)
+         "copy-attribute.rkt"
          (for-syntax "patch-arrows.rkt"
+                     "derived-valvar.rkt"
                      racket/format
                      stxparse-info/parse
                      racket/private/sc
@@ -32,29 +34,6 @@
 (define derived-valvar-cache (make-weak-hash))
 
 (begin-for-syntax
-  ;; Act like a syntax transformer, but which is recognizable via the
-  ;; derived-pattern-variable? predicate.
-  (struct derived-valvar (valvar)
-    #:property prop:procedure
-    (λ (self stx)
-      #`(#%expression #,(derived-valvar-valvar self))))
-
-  (define (id-is-derived-valvar? id)
-    (define mapping (syntax-local-value id (thunk #f)))
-    (and mapping ;; … defined as syntax
-         (syntax-pattern-variable? mapping) ; and is a syntax pattern variable
-         (let ()
-           (define mapping-slv
-             (syntax-local-value (syntax-mapping-valvar mapping) (thunk #f)))
-           ;; either a mapping → attribute → derived,
-           ;; or directly mapping → derived
-           (or (and (-attribute-mapping? mapping-slv) ;; is an attribute
-                    (derived-valvar? ;; and the pvar's valvar is a derived
-                     (syntax-local-value (-attribute-mapping-var mapping-slv)
-                                         (thunk #f))))
-               ;; or the pvar's valvar is derived
-               (derived-valvar? mapping-slv)))))
-
   (define/contract (string-suffix a b)
     (-> string? string? string?)
     (define suffix-length (string-suffix-length a b))
@@ -100,12 +79,6 @@
         #`(#,(nest-ellipses stx (sub1 n))
            (… …))))
 
-  (define/contract (nest-map f last n)
-    (-> (-> syntax? syntax?) syntax? exact-nonnegative-integer? syntax?)
-    (if (= n 0)
-        last
-        (f (nest-map f last (sub1 n)))))
-
   (define/contract (find-subscript-binder bound)
     (-> identifier?
         (or/c #f (list/c identifier?                     ; bound
@@ -121,7 +94,9 @@
       
       (define/with-syntax ([binder . unique-at-runtime-id] …)
         (filter (compose (conjoin identifier?
-                                  (negate id-is-derived-valvar?)
+                                  (λ (pv)
+                                    (not
+                                     (pvar-property pv 'subtemplate-derived)))
                                   (λ~> (syntax-local-value _ (thunk #f))
                                        syntax-pattern-variable?)
                                   ;; force call syntax-local-value to prevent
@@ -141,9 +116,9 @@
       ;; Or write it as:
 
       #;(define/with-syntax ([binder . unique-at-runtime] …)
-          (for/list ([binder (current-pvars)]
+          (for/list ([binder (current-pvars+unique)]
                       #:when (identifier? (car binder))
-                      #:unless (id-is-derived-pvar? (car binder))
+                      #:unless (pvar-property (car binder) 'subtemplate-derived)
                       #:when (syntax-pattern-variable?
                               (syntax-local-value (car binder) (thunk #f)))
                       ;; force call syntax-local-value to prevent ambiguous
@@ -182,17 +157,6 @@
                     #'(binder …)
                     #'(unique-at-runtime-id …)
                     (car depths))))))
-
-(define/contract (attribute-val/c depth [bottom-predicate any/c])
-  (->* {exact-nonnegative-integer?} {flat-contract?} flat-contract?)
-  (flat-named-contract
-   (build-compound-type-name 'attribute-val/c depth bottom-predicate)
-   (λ (l)
-     (if (= depth 0)
-         (or (false? l) (bottom-predicate l))
-         (or (false? l)
-             (and (list? l)
-                  (andmap (attribute-val/c (sub1 depth)) l)))))))
 
 ;; Checks that all the given attribute values have the same structure.
 ;; 
@@ -441,14 +405,6 @@
    (define/with-syntax temp-cached (generate-temporary #'bound))
    (define/with-syntax temp-generated (generate-temporary #'bound))
    (define/with-syntax temp-id-table (generate-temporary #'bound))
-   ;; works only for syntax patterns, luckily that's all we need since we
-   ;; produce a tree of (possibly missing) identifiers.
-   (define/with-syntax copy-attribute-pattern
-     ;; the ~and is important, to prevent the nested ~or from being treated as
-     ;; an ellipsis-head pattern.
-     (nest-map (λ (pat) #`{~or #f ({~and #,pat} (... ...))})
-               #'{~or #f {~var bound id}}
-               (syntax-e #'ellipsis-depth)))
    ;; HERE: cache the define-temp-ids in the free-id-table, and make sure
    ;; that we retrieve the cached ones, so that two subtemplate within the same
    ;; syntax-case or syntax-parse clause use the same derived ids.
@@ -539,9 +495,4 @@
           (quote-syntax bound)
           (free-id-table-map temp-id-table (λ (k v) k))))
        
-       ;; manually creating the attribute with (make-attribute-mapping …)
-       ;; works, but the attribute behaves in a bogus way when put inside
-       ;; an (?@ yᵢ ...). I must be missing some step in the construction
-       ;; of the attribute
-       (define/syntax-parse copy-attribute-pattern temp-cached)
-       (define-pvars bound))))
+       (copy-raw-syntax-attribute bound temp-cached ellipsis-depth #t))))
