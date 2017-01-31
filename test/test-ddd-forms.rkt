@@ -174,7 +174,6 @@
                  x … …])
               '(1 2 3 4 5 6))
 
-#|
 ;; TODO: expr … inside begin and let
 (check-equal? (syntax-case #'((1 2 3) (4 5)) ()
                   [((x …) …)
@@ -182,7 +181,65 @@
                      (list (length (syntax->list #'(x …)))
                            (+ (syntax-e #'x) 3) …)
                      …)])
-                '([3 (4 5 6)]
-                  [2 (7 8)]))
-|#
+                '([3 4 5 6]
+                  [2 7 8]))
 
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                [([x …] …)
+                 x … …])
+              '(1 2 3 4 5 6))
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                [([x …] …)
+                 (x …) …])
+              '((1 2 3) (4 5 6)))
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                [([x …] …)
+                 ((list x) …) …])
+              '(((1) (2) (3)) ((4) (5) (6))))
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                [([x …] …)
+                 ((+ x 10) …) …])
+              '((11 12 13) (14 15 16)))
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                [([x …] …)
+                 (begin ((+ x 10) …) …)])
+              '((11 12 13) (14 15 16)))
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                [([x …] …)
+                 (define/with-syntax y (+ x 10)) … …
+                 y … …])
+              '(11 12 13 14 15 16))
+
+;; Implicit apply with (+ y … …)
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                  [([x …] …)
+                   (define/with-syntax y (+ x 10)) … …
+                   (+ y … …)])
+                81)
+
+;; Implicit apply with (+ (* x 2) … …)
+(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
+                  [([x …] …)
+                   (+ (* x 2) … …)])
+                42)
+
+;; TODO: (define ) … … should register the variable with current-pvars.
+#;(syntax-parse #'([1 2 3] [4 5 6])
+    [([x …] …)
+     (define y (+ x 10)) … …
+     y … …])
+
+
+
+#lang racket
+
+(require subtemplate/ddd-forms
+         stxparse-info/case
+         stxparse-info/parse
+         rackunit
+         syntax/macro-testing
+         phc-toolkit/untyped)
+
+(syntax-parse #'([1 2 3] #:kw [4 5 6])
+    [({~and {~or [x …] #:kw}} …)
+     ((x …) …)])

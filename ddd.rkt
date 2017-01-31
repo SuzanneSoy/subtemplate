@@ -81,6 +81,16 @@
       (quote-syntax #,(x-pvar-present-marker #'present-variables))
       body))
 
+(define (map#f* f l*)
+  (cond [(andmap (λ (l) (eq? l #f)) l*)
+         '(#f)]
+        [(andmap (or/c null? #f) l*)
+         '()]
+        [else (let ([cars (map (λ (l) (if l (car l) #f)) l*)]
+                    [cdrs (map (λ (l) (if l (cdr l) #f)) l*)])
+                (cons (apply f cars)
+                      (map#f* f cdrs)))]))
+
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …)
     (remove-duplicates
@@ -96,7 +106,7 @@
   (define-temp-ids "~aᵢ" (pvar …))
   (define/with-syntax f
     #`(#%plain-lambda (pvarᵢ …)
-                      (shadow pvar pvarᵢ) …
+                      (shadow pvar pvarᵢ) … ;; TODO: find a way to make the variable marked as "missing" if it is #f ? So that it triggers an error if used outside of ??
                       (let-values ()
                         (detect-present-pvars (pvar …)
                                               body))))
@@ -150,10 +160,10 @@
                     [(list #f pv pvᵢ #f _) #'#f])
            present?+pvars)))
   
-  #'(map (λ (iterated-pvarᵢ …)
-           (expanded-f filling-pvar …))
-         (attribute* iterated-pvar)
-         …))
+  #'(map#f* (λ (iterated-pvarᵢ …)
+              (expanded-f filling-pvar …))
+            (list (attribute* iterated-pvar)
+                  …)))
 
 (define-syntax/case (shadow pvar new-value) ()
   (match (attribute-info #'pvar '(pvar attr))
