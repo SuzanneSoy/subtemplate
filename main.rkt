@@ -14,7 +14,6 @@
          (subtract-in racket/syntax stxparse-info/case)
          "copy-attribute.rkt"
          (for-syntax "patch-arrows.rkt"
-                     "derived-valvar.rkt"
                      racket/format
                      stxparse-info/parse
                      racket/private/sc
@@ -94,7 +93,6 @@
       
       (define/with-syntax ([binder . unique-at-runtime-id] …)
         (filter (compose (conjoin identifier?
-                                  (negate id-is-derived-valvar?)
                                   (λ~> (syntax-local-value _ (thunk #f))
                                        syntax-pattern-variable?)
                                   ;; force call syntax-local-value to prevent
@@ -116,7 +114,6 @@
       #;(define/with-syntax ([binder . unique-at-runtime] …)
           (for/list ([binder (current-pvars+unique)]
                       #:when (identifier? (car binder))
-                      #:unless (id-is-derived-valvar? (car binder))
                       #:when (syntax-pattern-variable?
                               (syntax-local-value (car binder) (thunk #f)))
                       ;; force call syntax-local-value to prevent ambiguous

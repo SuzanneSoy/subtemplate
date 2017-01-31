@@ -6,8 +6,7 @@
          phc-toolkit/untyped
          subtemplate/copy-attribute
          (prefix-in - syntax/parse/private/residual)
-         (for-syntax "derived-valvar.rkt"
-                     racket/contract
+         (for-syntax racket/contract
                      racket/syntax
                      phc-toolkit/untyped
                      racket/function
@@ -24,7 +23,7 @@
 (begin-for-syntax
   (define/contract (attribute-real-valvar attr)
     (-> identifier? (or/c #f identifier?))
-    (define valvar1
+    (define valvar
       (let ([slv (syntax-local-value attr (λ () #f))])
         (if (syntax-pattern-variable? slv)
             (let* ([valvar (syntax-mapping-valvar slv)]
@@ -36,20 +35,14 @@
              'attribute*
              "not bound as an attribute or pattern variable"
              attr))))
-    ;; Try to extract the actual variable from a subtemplate derived valvar.
-    (define valvar2
-      (let ([valvar1-slv (syntax-local-value valvar1 (λ () #f))])
-        (if (derived-valvar? valvar1-slv)
-            (derived-valvar-valvar valvar1-slv)
-            valvar1)))
-    (if (syntax-local-value valvar2 (λ () #f)) ;; is it a macro-ish thing?
+    (if (syntax-local-value valvar (λ () #f)) ;; is it a macro-ish thing?
         (begin
           (log-warning
            (string-append "Could not extract the plain variable corresponding to"
                           " the pattern variable or attribute ~a"
                           (syntax-e attr)))
           #f)
-        valvar2)))
+        valvar)))
 
 ;; free-identifier=? seems to stop working on the valvars once we are outside of
 ;; the local-expand containing the let which introduced these valvars, therefore
@@ -90,12 +83,16 @@
 
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …)
-    (map syntax-local-introduce
-         (filter (conjoin identifier?
-                          (λ~> (syntax-local-value _ (thunk #f))
-                               syntax-pattern-variable?)
-                          attribute-real-valvar)
-                 (current-pvars))))
+    (remove-duplicates
+     (map syntax-local-get-shadower
+          (map syntax-local-introduce
+               (filter (conjoin identifier?
+                                (λ~> (syntax-local-value _ (thunk #f))
+                                     syntax-pattern-variable?)
+                                attribute-real-valvar)
+                       (reverse (current-pvars)))))
+     bound-identifier=?))
+  
   (define-temp-ids "~aᵢ" (pvar …))
   (define/with-syntax f
     #`(#%plain-lambda (pvarᵢ …)
@@ -126,6 +123,7 @@
                         stx))
 
   (begin
+    ;; present?+pvars is a list of (list shadow? pv pvᵢ present? depth/#f)
     (define present?+pvars
       (for/list ([present? (in-list present-variables)]
                  [pv (in-syntax #'(pvar …))]
@@ -136,7 +134,7 @@
                (if (> depth 0)
                    (list #t pv pvᵢ #t depth)
                    (list #f pv pvᵢ #t depth))]) ;; TODO: detect shadowed bindings, if the pvar was already iterated on, raise an error (we went too deep).
-            (list #f pv pvᵢ #f))))
+            (list #f pv pvᵢ #f #f))))
     ;; Pvars which are iterated over
     (define/with-syntax ((_ iterated-pvar iterated-pvarᵢ _ _) …)
       (filter car present?+pvars))
@@ -147,8 +145,9 @@
     ;; If the pvar is iterated, use the iterated pvarᵢ 
     ;; otherwise use the original (attribute* pvar)
     (define/with-syntax (filling-pvar …)
-      (map (match-λ [(list #t pv pvᵢ _ _) pvᵢ]
-                    [(list #f pv pvᵢ _ _) #`(attribute* #,pv)])
+      (map (match-λ [(list #t pv pvᵢ #t _) pvᵢ]
+                    [(list #f pv pvᵢ #t _) #`(attribute* #,pv)]
+                    [(list #f pv pvᵢ #f _) #'#f])
            present?+pvars)))
   
   #'(map (λ (iterated-pvarᵢ …)
@@ -164,7 +163,11 @@
                                   #,(max 0 (sub1 depth))
                                   #,syntax?)]
     [`(pvar ,valvar ,depth)
-     #`(define-raw-syntax-mapping pvar
+     #`(copy-raw-syntax-attribute pvar
+                                  new-value
+                                  #,(max 0 (sub1 depth))
+                                  #t)
+     #;#`(define-raw-syntax-mapping pvar
          tmp-valvar
          new-value
          #,(sub1 depth))]))

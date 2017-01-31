@@ -47,8 +47,7 @@
 (define-syntax/parse (copy-raw-syntax-attribute name:id
                                                 attr-value:expr
                                                 ellipsis-depth:nat
-                                                syntax?:boolean
-                                                props:expr)
+                                                syntax?:boolean)
   ;; the ~and is important, to prevent the nested ~or from being treated as
   ;; an ellipsis-head pattern.
   #:with nested (nest-map (λ (pat) #`{~or #f ({~and #,pat} (... ...))})
@@ -61,13 +60,11 @@
                           (syntax-e #'ellipsis-depth))
   (if (syntax-e #'syntax?)
       #'(begin
-          (define/syntax-parse nested attr-value)
-          (define-pvars name))
+          (define/syntax-parse nested attr-value))
       #'(begin
           (define-syntax-class extract-non-syntax
             #:attributes (name)
             (pattern v
                      #:attr name (wrapped-value (syntax-e #'v))))
           (define/syntax-parse nested (attribute-wrap attr-value
-                                                      ellipsis-depth))
-          (define-pvars name))))
+                                                      ellipsis-depth)))))
