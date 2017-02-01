@@ -81,15 +81,22 @@
       (quote-syntax #,(x-pvar-present-marker #'present-variables))
       body))
 
-(define (map#f* f l*)
-  (cond [(andmap (λ (l) (eq? l #f)) l*)
-         '(#f)]
-        [(andmap (or/c null? #f) l*)
-         '()]
-        [else (let ([cars (map (λ (l) (if l (car l) #f)) l*)]
-                    [cdrs (map (λ (l) (if l (cdr l) #f)) l*)])
-                (cons (apply f cars)
-                      (map#f* f cdrs)))]))
+(define (=* . vs)
+  (if (< (length vs) 2)
+      #t
+      (apply = vs)))
+
+(define (map#f* f attr-ids l*)
+  (for ([l (in-list l*)]
+        [attr-id (in-list attr-ids)])
+  (when (eq? l #f)
+    (raise-syntax-error (syntax-e attr-id)
+                        "attribute contains an omitted element"
+                        attr-id)))
+  (unless (apply =* (map length l*))
+    (raise-syntax-error 'ddd
+                        "incompatible ellipis counts for template"))
+  (apply map f l*))
 
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …)
@@ -159,9 +166,11 @@
                     [(list #f pv pvᵢ #t _) #`(attribute* #,pv)]
                     [(list #f pv pvᵢ #f _) #'#f])
            present?+pvars)))
-  
+
   #'(map#f* (λ (iterated-pvarᵢ …)
               (expanded-f filling-pvar …))
+            (list (quote-syntax iterated-pvar)
+                  …)
             (list (attribute* iterated-pvar)
                   …)))
 

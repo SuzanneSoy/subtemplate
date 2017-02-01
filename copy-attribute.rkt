@@ -53,9 +53,13 @@
   #:with nested (nest-map (λ (pat) #`{~or #f ({~and #,pat} (... ...))})
                           (if (syntax-e #'syntax?)
                               #'{~or #f name}
-                              ;; variable with empty name, so that the attribute
+                              ;; Variable with empty name, so that the attribute
                               ;; gets exported without a prefix.
-                              #`{~or #f {~var #,(datum->syntax #'name '||)
+                              ;; Take care to keep the original srcloc,
+                              ;; otherwise error messages lack the proper srcloc
+                              #`{~or #f {~var #,(datum->syntax #'name
+                                                               '||
+                                                               #'name)
                                               extract-non-syntax}})
                           (syntax-e #'ellipsis-depth))
   (if (syntax-e #'syntax?)

@@ -25,12 +25,12 @@
               '(4 5 6))
 
 (check-equal? (syntax-case #'(((1 2) (3)) ((4 5 6))) ()
-                  [(((x …) …) …)
-                   (ddd (list (length (syntax->list #'((x …) …)))
-                              (length (syntax->list #'(x … …)))
-                              (ddd (ddd (- (syntax-e #'x))))))])
-                '([2 3 ((-1 -2) (-3))]
-                  [1 3 ((-4 -5 -6))]))
+                [(((x …) …) …)
+                 (ddd (list (length (syntax->list #'((x …) …)))
+                            (length (syntax->list #'(x … …)))
+                            (ddd (ddd (- (syntax-e #'x))))))])
+              '([2 3 ((-1 -2) (-3))]
+                [1 3 ((-4 -5 -6))]))
 
 (check-equal? (syntax-case #'([1 2 3] [a]) ()
                 [([x …] [y …])
@@ -72,3 +72,18 @@
                             (ddd (+ (syntax-e #'x) 3))))])
               '([3 (4 5 6)]
                 [2 (7 8)]))
+
+
+;; omitted element at the leaves = ok (should it be ok?)
+(check-equal? (syntax-parse #'(1 #f 3)
+                [({~and {~or x:nat #f}} …)
+                 (ddd x)])
+              '(1 #f 3))
+
+;; omitted element in the tree = not ok
+(check-exn
+ #rx"attribute contains an omitted element"
+ (λ ()
+   (syntax-parse #'((1 1) #f (1 2 1 1))
+     [({~and {~or (x:nat …) #f}} …)
+      (ddd (ddd x))])))

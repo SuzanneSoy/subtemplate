@@ -176,13 +176,13 @@
 
 ;; TODO: expr … inside begin and let
 (check-equal? (syntax-case #'((1 2 3) (4 5)) ()
-                  [((x …) …)
-                   (let ()
-                     (list (length (syntax->list #'(x …)))
-                           (+ (syntax-e #'x) 3) …)
-                     …)])
-                '([3 4 5 6]
-                  [2 7 8]))
+                [((x …) …)
+                 (let ()
+                   (list (length (syntax->list #'(x …)))
+                         (+ (syntax-e #'x) 3) …)
+                   …)])
+              '([3 4 5 6]
+                [2 7 8]))
 
 (check-equal? (syntax-parse #'([1 2 3] [4 5 6])
                 [([x …] …)
@@ -212,16 +212,16 @@
 
 ;; Implicit apply with (+ y … …)
 (check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                  [([x …] …)
-                   (define/with-syntax y (+ x 10)) … …
-                   (+ y … …)])
-                81)
+                [([x …] …)
+                 (define/with-syntax y (+ x 10)) … …
+                 (+ y … …)])
+              81)
 
 ;; Implicit apply with (+ (* x 2) … …)
 (check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                  [([x …] …)
-                   (+ (* x 2) … …)])
-                42)
+                [([x …] …)
+                 (+ (* x 2) … …)])
+              42)
 
 ;; TODO: (define ) … … should register the variable with current-pvars.
 #;(syntax-parse #'([1 2 3] [4 5 6])
@@ -230,16 +230,16 @@
      y … …])
 
 
+;; omitted element in the tree = not ok under ellipses
+(check-exn
+ #rx"attribute contains an omitted element"
+ (λ ()
+   (syntax-parse #'([1 2 3] #:kw [4 5 6])
+     [({~and {~or [x …] #:kw}} …)
+      ((x …) …)])))
 
-#lang racket
-
-(require subtemplate/ddd-forms
-         stxparse-info/case
-         stxparse-info/parse
-         rackunit
-         syntax/macro-testing
-         phc-toolkit/untyped)
-
-(syntax-parse #'([1 2 3] #:kw [4 5 6])
-    [({~and {~or [x …] #:kw}} …)
-     ((x …) …)])
+;; omitted element in the tree = ok as auto-syntax-e
+(check-equal? (syntax-parse #'([1 2 3] #:kw [4 5 6])
+                [({~and {~or [x …] #:kw}} …)
+                 (x …)])
+              '((1 2 3) #f (4 5 6)))
