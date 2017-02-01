@@ -1,6 +1,6 @@
 #lang racket
 
-(provide ddd)
+(provide ddd ?? ?@ splicing-list splicing-list-l splicing-list?)
 
 (require stxparse-info/current-pvars
          phc-toolkit/untyped
@@ -79,7 +79,7 @@
   
   #`(let-values ()
       (quote-syntax #,(x-pvar-present-marker #'present-variables))
-      body))
+      body)) ;;;;;;;;;;;;;;;;;;;;;; expanded-body
 
 (define (=* . vs)
   (if (< (length vs) 2)
@@ -98,9 +98,9 @@
                         "incompatible ellipis counts for template"))
   (apply map f l*))
 
-(define-syntax/case (ddd body) ()
-  (define/with-syntax (pvar …)
-    (remove-duplicates
+
+(define-for-syntax (current-pvars-shadowers)
+  (remove-duplicates
      (map syntax-local-get-shadower
           (map syntax-local-introduce
                (filter (conjoin identifier?
@@ -109,30 +109,63 @@
                                 attribute-real-valvar)
                        (reverse (current-pvars)))))
      bound-identifier=?))
+
+(define-for-syntax (extract-present-variables expanded-form stx)
+  (define present-variables** (find-present-variables-vector expanded-form))
+  (define present-variables*
+    (and (vector? present-variables**)
+         (vector->list present-variables**)))
+  (unless ((listof (syntax/c boolean?)) present-variables*)
+    (displayln expanded-form)
+    (raise-syntax-error 'ddd
+                        (string-append
+                         "internal error: could not extract the vector of"
+                         " pattern variables present in the body.")
+                        stx))
+  (define present-variables (map syntax-e present-variables*))
+  present-variables)
+
+(struct splicing-list (l))
+;; TODO: dotted rest, identifier macro
+#;(define-syntax-rule (?@ v ...)
+    (splicing-list (list v ...)))
+(define ?@ (compose splicing-list list))
+
+(define-syntax/case (?? a b) ()
+  (define/with-syntax (pvar …) (current-pvars-shadowers))
+
+  (define/with-syntax expanded-a
+    (local-expand #'(detect-present-pvars (pvar …) a) 'expression '()))
+
+  (define present-variables (extract-present-variables #'expanded-a stx))
+
+  (define/with-syntax (test-present-attribute …)
+    (for/list ([present? (in-list present-variables)]
+               [pv (in-syntax #'(pvar …))]
+               #:when present?
+               ;; only attributes can have missing elements.
+               #:when (eq? 'attr (car (attribute-info pv '(pvar attr)))))
+      #`(attribute* #,pv)))
+             
+
+  #'(if (and test-present-attribute …)
+        a
+        b))
+
+(define-syntax/case (ddd body) ()
+  (define/with-syntax (pvar …) (current-pvars-shadowers))
   
   (define-temp-ids "~aᵢ" (pvar …))
   (define/with-syntax f
     #`(#%plain-lambda (pvarᵢ …)
-                      (shadow pvar pvarᵢ) … ;; TODO: find a way to make the variable marked as "missing" if it is #f ? So that it triggers an error if used outside of ??
-                      (let-values ()
-                        (detect-present-pvars (pvar …)
-                                              body))))
+                      (shadow pvar pvarᵢ) …
+                      (detect-present-pvars (pvar …)
+                                            body)))
 
   ;; extract all the variable ids present in f
   (define/with-syntax expanded-f (local-expand #'f 'expression '()))
 
-  (begin
-    (define present-variables** (find-present-variables-vector #'expanded-f))
-    (define present-variables*
-      (and (vector? present-variables**)
-           (vector->list present-variables**)))
-    (unless ((listof (syntax/c boolean?)) present-variables*)
-      (raise-syntax-error 'ddd
-                          (string-append
-                           "internal error: could not extract the vector of"
-                           " pattern variables present in the body.")
-                          stx))
-    (define present-variables (map syntax-e present-variables*)))
+  (define present-variables (extract-present-variables #'expanded-f stx))
 
   (unless (ormap identity present-variables)
     (raise-syntax-error 'ddd
@@ -146,7 +179,7 @@
                  [pv (in-syntax #'(pvar …))]
                  [pvᵢ (in-syntax #'(pvarᵢ …))])
         (if present?
-            (match (attribute-info pv)
+            (match (attribute-info pv '(pvar attr))
               [(list* _ _valvar depth _)
                (if (> depth 0)
                    (list #t pv pvᵢ #t depth)

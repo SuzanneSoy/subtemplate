@@ -3,7 +3,9 @@
          define
          let
          (rename-out [begin #%intef-begin])
-         (rename-out [app #%app]))
+         (rename-out [app #%app])
+         ??
+         ?@)
 
 (require subtemplate/ddd
          stxparse-info/case
@@ -91,15 +93,31 @@
 (begin-for-syntax
   (define-splicing-syntax-class arg
     (pattern {~seq e:expr ooo*:ooo+}
-             #:with expanded (ddd* e ooo*))
+             #:with expanded #`(splicing-list #,(ddd* e ooo*)))
     (pattern other
-             #:with expanded #'(#%app list other))))
+             ;#:with expanded #'(#%app list other)
+             #:with expanded #'other)))
 (define-syntax app
   (syntax-parser
-    [(_ fn {~and arg {~not {~literal …}}} …)
+    #;[(_ fn {~and arg {~not {~literal …}}} …) ;; TODO: check for ?@ too
      #'(#%app fn arg …)]
     [{~and (_ fn arg:arg …)
            {~not (_ _ {~literal …} . _)}} ;; not fn directly followed by a …
-     #'(#%app apply fn (#%app append arg.expanded …))]
+     ;#'(#%app apply fn (#%app append arg.expanded …))
+     #'(#%app apply fn (#%app splice-append arg.expanded …))]
     [(_ arg:arg …) ;; shorthand for list creation
-     #'(#%app apply list (#%app append arg.expanded …))]))
+     ;#'(#%app apply list (#%app append arg.expanded …))
+     #'(#%app apply list (#%app splice-append arg.expanded …))]))
+
+(define (splice-append . l*) (splice-append* l*))
+(define (splice-append* l*)
+  (cond
+    [(pair? l*)
+     (if (splicing-list? (car l*))
+         (append (splice-append* (splicing-list-l (car l*)))
+                 (splice-append* (cdr l*)))
+         (cons (car l*) (splice-append* (cdr l*))))]
+    [(splicing-list? l*)
+     (splicing-list-l l*)]
+    [else ;; should be null.
+     l*]))
