@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 (provide begin
          define
          let
@@ -7,7 +7,8 @@
          ??
          ?@)
 
-(require subtemplate/ddd
+(require racket/list
+         subtemplate/ddd
          stxparse-info/case
          stxparse-info/parse
          phc-toolkit/untyped
@@ -15,7 +16,8 @@
                                begin let lambda define))
          (prefix-in - (only-in stxparse-info/case
                                define/with-syntax))
-         (for-syntax racket/list
+         (for-syntax racket/base
+                     racket/list
                      stxparse-info/parse
                      stxparse-info/parse/experimental/template
                      phc-toolkit/untyped)
@@ -104,10 +106,12 @@
     [{~and (_ fn arg:arg …)
            {~not (_ _ {~literal …} . _)}} ;; not fn directly followed by a …
      ;#'(#%app apply fn (#%app append arg.expanded …))
-     #'(#%app apply fn (#%app splice-append arg.expanded …))]
+     (syntax/top-loc this-syntax
+       (#%app apply fn (#%app splice-append arg.expanded …)))]
     [(_ arg:arg …) ;; shorthand for list creation
      ;#'(#%app apply list (#%app append arg.expanded …))
-     #'(#%app apply list (#%app splice-append arg.expanded …))]))
+     (syntax/top-loc this-syntax
+       (#%app apply list (#%app splice-append arg.expanded …)))]))
 
 (define (splice-append . l*) (splice-append* l*))
 (define (splice-append* l*)

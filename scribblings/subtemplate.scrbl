@@ -1,13 +1,13 @@
 #lang scribble/manual
 @require[scriblib/footnote
-         @for-label[subtemplate
+         @for-label[subtemplate/template-subscripts
                     syntax/parse/experimental/template
                     racket/base]]
 
 @title{Subtemplate}
 @author[@author+email["Georges Dupéron" "georges.duperon@gmail.com"]]
 
-@defmodule[subtemplate]
+@defmodule[subtemplate/template-subscripts]
 
 @defform*[{(subtemplate template)
            (subtemplate template #:properties (prop ...))}

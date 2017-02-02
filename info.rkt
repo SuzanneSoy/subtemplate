@@ -13,4 +13,4 @@
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
 (define pkg-desc "Description Here")
 (define version "0.0")
-(define pkg-authors '(georges))
+(define pkg-authors '("Georges Dupéron"))
