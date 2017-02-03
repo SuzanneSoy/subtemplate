@@ -5,7 +5,11 @@
          (rename-out [begin #%intef-begin])
          (rename-out [app #%app])
          ??
+         ?if
+         ?cond
+         ?attr
          ?@
+         ?@@
          splice-append
          splice-append*
          splicing-list?
@@ -94,8 +98,8 @@
 (define-syntax/parse (begin stmt:stmt …)
   (template (-begin (?@ stmt.expanded) …)))
 
-(define-syntax/parse (let ([var . val] …) . body)
-  (template (-let ([var (begin . val)] …) (begin . body))))
+(define-syntax/parse (let {~optional name:id} ([var . val] …) . body)
+  (template (-let (?? name) ([var (begin . val)] …) (begin . body))))
 
 (begin-for-syntax
   (define-splicing-syntax-class arg

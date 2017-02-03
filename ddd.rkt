@@ -1,6 +1,7 @@
 #lang racket
 
-(provide ddd ?? ?@ splicing-list splicing-list-l splicing-list?)
+(provide ddd ?? ?if ?cond ?attr ?@ ?@@
+         splicing-list splicing-list-l splicing-list?)
 
 (require stxparse-info/current-pvars
          phc-toolkit/untyped
@@ -38,8 +39,8 @@
     (if (syntax-local-value valvar (λ () #f)) ;; is it a macro-ish thing?
         (begin
           (log-warning
-           (string-append "Could not extract the plain variable corresponding to"
-                          " the pattern variable or attribute ~a"
+           (string-append "Could not extract the plain variable corresponding"
+                          " to the pattern variable or attribute ~a"
                           (syntax-e attr)))
           #f)
         valvar)))
@@ -54,7 +55,9 @@
 
   (define/with-syntax expanded-body
     (local-expand #`(let-values ()
-                      (quote-syntax #,(stx-map x-pvar-scope #'(pvar-real-valvar …)) #:local)
+                      (quote-syntax #,(stx-map x-pvar-scope
+                                               #'(pvar-real-valvar …))
+                                    #:local)
                       body)
                   'expression
                   '()))
@@ -132,20 +135,24 @@
 #;(define-syntax-rule (?@ v ...)
     (splicing-list (list v ...)))
 (define (?@ . vs) (splicing-list vs))
+(define (?@@ . vs) (map splicing-list vs))
 
-(define-syntax (?? stx)
+(define-for-syntax ((?* mode) stx)
   (define (parse stx)
     (syntax-case stx ()
-      [(self a)
-       (parse (datum->syntax stx `(,#'self ,#'a ,#'(?@)) stx stx))]
-      [(_ a b)
+      [(self condition a)
+       (?* (datum->syntax stx `(,#'self ,#'c ,#'a ,#'(?@)) stx stx))]
+      [(_ condition a b)
        (let ()
          (define/with-syntax (pvar …) (current-pvars-shadowers))
 
-         (define/with-syntax expanded-a
-           (local-expand #'(detect-present-pvars (pvar …) a) 'expression '()))
+         (define/with-syntax expanded-condition
+           (local-expand #'(detect-present-pvars (pvar …) condition)
+                         'expression
+                         '()))
 
-         (define present-variables (extract-present-variables #'expanded-a stx))
+         (define present-variables
+           (extract-present-variables #'expanded-condition stx))
 
          (define/with-syntax (test-present-attribute …)
            (for/list ([present? (in-list present-variables)]
@@ -154,11 +161,44 @@
                       ;; only attributes can have missing elements.
                       #:when (eq? 'attr (car (attribute-info pv '(pvar attr)))))
              #`(attribute* #,pv)))
-             
-
-         #'(if (and test-present-attribute …)
-               a
+         
+         #`(if (and test-present-attribute …)
+               #,(if (eq? mode 'if) #'a #'condition)
                b))]))
+  (parse stx))
+
+(define-syntax ?if (?* 'if))
+
+(define-syntax (?cond stx)
+  (syntax-case stx (else)
+    [(self) #'(raise-syntax-error '?cond
+                                  "all branches contain omitted elements"
+                                  self)]
+    [(self [else]) #'(?@)]
+    [(self [else . v]) #'(begin . v)]
+    [(self [condition v . vs] . rest)
+     (not (free-identifier=? #'condition #'else))
+     (let ([else (datum->syntax stx `(,#'self . ,#'rest) stx stx)])
+       (datum->syntax stx
+                      `(,#'?if ,#'condition ,#'(begin v . vs) . ,else)
+                      stx
+                      stx))]))
+
+(define-syntax (?attr stx)
+  (syntax-case stx ()
+    [(self condition)
+     (datum->syntax stx `(,#'?if ,#'condition #t #f) stx stx)]))
+
+(define-syntax (?? stx)
+  (define (parse stx)
+    (syntax-case stx ()
+      [(self a)
+       ((?* 'or) (datum->syntax stx `(,#'self ,#'a ,#'a ,#'(?@)) stx stx))]
+      [(self a b)
+       ((?* 'or) (datum->syntax stx `(,#'self ,#'a ,#'a ,#'b) stx stx))]
+      [(self a b c . rest)
+       (let ([else (datum->syntax stx `(,#'self ,#'b ,#'c . ,#'rest) stx stx)])
+         (datum->syntax stx `(,#'self ,#'a ,else) stx stx))]))
   (parse stx))
 
 (define-syntax/case (ddd body) ()

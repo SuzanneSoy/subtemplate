@@ -6,8 +6,6 @@
          syntax/macro-testing
          phc-toolkit/untyped)
 
-;; TODO: allow the overridden ?? and ?@ in template.
-
 (check-equal? (syntax-parse #'(1 #:kw 3)
                 [({~and {~or x:nat #:kw}} …)
                  (?? x 'missing) …])
