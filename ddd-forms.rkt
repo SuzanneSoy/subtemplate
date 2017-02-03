@@ -105,18 +105,19 @@
              ;#:with expanded #'(#%app list other)
              #:with expanded #'other))
   (define-syntax-class not-stx-pair
-    (pattern {~not (_ . _)})))
+    (pattern () #:with v #''())
+    (pattern {~and v {~not (_ . _)}})))
 (define-syntax app
   (syntax-parser
-    [{~and (_ fn arg:arg … #;.rest:not-stx-pair)
+    [{~and (_ fn arg:arg … . rest:not-stx-pair)
            {~not (_ _ {~literal …} . _)}} ;; not fn directly followed by a …
      ;#'(#%app apply fn (#%app append arg.expanded …))
      (syntax/top-loc this-syntax
-       (#%app apply fn (#%app splice-append arg.expanded … #;#:rest #;rest)))]
-    [(_ arg:arg … #;.rest:not-stx-pair) ;; shorthand for list creation
+       (#%app apply fn (#%app splice-append arg.expanded … #:rest rest.v)))]
+    [(_ arg:arg … . rest:not-stx-pair) ;; shorthand for list creation
      ;#'(#%app apply list (#%app append arg.expanded …))
      (syntax/top-loc this-syntax
-       (#%app apply list (#%app splice-append arg.expanded … #;#:rest #;rest)))]))
+       (#%app apply list (#%app splice-append arg.expanded … #:rest rest.v)))]))
 
 (define (splice-append #:rest [rest '()] . l*)
   (splice-append* (if (null? rest) l* (append l* rest))))
