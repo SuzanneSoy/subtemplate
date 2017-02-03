@@ -1,6 +1,6 @@
 #lang racket
 (module m-ok racket
-  (require subtemplate/template-subscripts
+  (require subtemplate/private/template-subscripts
            stxparse-info/parse
            stxparse-info/case
            rackunit
@@ -11,7 +11,7 @@
       (subtemplate ok)))))
 
 (module m-no-parse racket
-  (require subtemplate/template-subscripts
+  (require subtemplate/private/template-subscripts
            stxparse-info/case
            rackunit
            syntax/macro-testing)
@@ -21,7 +21,7 @@
       (subtemplate ok)))))
 
 (module m-wrong-parse racket
-  (require subtemplate/template-subscripts
+  (require subtemplate/private/template-subscripts
            syntax/parse
            stxparse-info/case
            rackunit
@@ -33,7 +33,7 @@
       (subtemplate ok)))))
 
 (module m-wrong-case racket
-  (require subtemplate/template-subscripts
+  (require subtemplate/private/template-subscripts
            stxparse-info/parse
            rackunit
            syntax/macro-testing)
@@ -43,7 +43,7 @@
       (subtemplate ok)))))
 
 (module m-no-parse-wrong-case racket
-  (require subtemplate/template-subscripts
+  (require subtemplate/private/template-subscripts
            rackunit
            syntax/macro-testing)
   (check-exn #rx"subtemplate: syntax-parse seems undefined,"
@@ -52,7 +52,7 @@
       (subtemplate ok)))))
 
 (module m-wrong-parse-wrong-case racket
-  (require subtemplate/template-subscripts
+  (require subtemplate/private/template-subscripts
            syntax/parse
            rackunit
            syntax/macro-testing)

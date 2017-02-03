@@ -8,8 +8,8 @@
 (require (rename-in stxparse-info/parse/experimental/template
                     [?? stxparse:??]
                     [?@ stxparse:?@])
-         subtemplate/ddd-forms
-         subtemplate/template-subscripts
+         subtemplate/private/ddd-forms
+         subtemplate/private/template-subscripts
          (only-in racket/base [... …])
          stxparse-info/parse
          stxparse-info/case

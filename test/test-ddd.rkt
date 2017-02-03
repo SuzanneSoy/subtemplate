@@ -1,5 +1,5 @@
 #lang racket
-(require subtemplate/ddd
+(require subtemplate/private/ddd
          stxparse-info/case
          stxparse-info/parse
          (only-in racket/base [... …])

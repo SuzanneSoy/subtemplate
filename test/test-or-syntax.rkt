@@ -1,7 +1,7 @@
 #lang racket
 
-(require subtemplate/ddd
-         subtemplate/unsyntax-preparse
+(require subtemplate/private/ddd
+         subtemplate/private/unsyntax-preparse
          stxparse-info/case
          stxparse-info/parse
          rackunit

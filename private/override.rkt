@@ -1,6 +1,6 @@
 #lang racket
 (require racket/require
-         (rename-in subtemplate/template-subscripts
+         (rename-in subtemplate/private/template-subscripts
                     [subtemplate syntax]
                     [quasisubtemplate quasisyntax])
          stxparse-info/parse
@@ -11,7 +11,7 @@
                     quasitemplate/loc)
          stxparse-info/case
          (subtract-in racket/syntax stxparse-info/case))
-(provide (all-from-out subtemplate/template-subscripts
+(provide (all-from-out subtemplate/private/template-subscripts
                        stxparse-info/parse
                        stxparse-info/parse/experimental/template
                        stxparse-info/case

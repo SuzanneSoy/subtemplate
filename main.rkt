@@ -1,9 +1,9 @@
 #lang racket/base
-(require subtemplate/ddd-forms
+(require subtemplate/private/ddd-forms
          stxparse-info/case
          stxparse-info/parse
-         subtemplate/unsyntax-preparse
-         subtemplate/top-subscripts
+         subtemplate/private/unsyntax-preparse
+         subtemplate/private/top-subscripts
          (only-in racket/base [... …])
          (only-in stxparse-info/parse [...+ …+]))
 (provide
@@ -13,7 +13,7 @@
  (all-from-out stxparse-info/case)
  ;; stxparse-info/parse
  (all-from-out stxparse-info/parse)
- ;; subtemplate/unsyntax-preparse
+ ;; subtemplate/private/unsyntax-preparse
  (rename-out
   [template-ddd template]
   [subtemplate-ddd subtemplate]
@@ -21,9 +21,9 @@
   [quasisubtemplate-ddd quasisubtemplate]
   [subtemplate-ddd syntax]
   [quasisubtemplate-ddd quasisyntax])
- ;; subtemplate/top-subscripts
+ ;; subtemplate/private/top-subscripts
  ;; => #%top
- (all-from-out subtemplate/top-subscripts)
+ (all-from-out subtemplate/private/top-subscripts)
  ;; aliases
  …
  …+)

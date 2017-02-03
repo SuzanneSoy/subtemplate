@@ -1,5 +1,5 @@
 #lang racket/base
-(require (only-in subtemplate/ddd-forms
+(require (only-in subtemplate/private/ddd-forms
                   splicing-list
                   splice-append
                   splice-append*)

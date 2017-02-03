@@ -5,7 +5,7 @@
 
 (require stxparse-info/current-pvars
          phc-toolkit/untyped
-         subtemplate/copy-attribute
+         subtemplate/private/copy-attribute
          (prefix-in - syntax/parse/private/residual)
          (for-syntax racket/contract
                      racket/syntax

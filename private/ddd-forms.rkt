@@ -17,7 +17,7 @@
          splicing-list-l)
 
 (require racket/list
-         subtemplate/ddd
+         subtemplate/private/ddd
          stxparse-info/case
          stxparse-info/parse
          phc-toolkit/untyped

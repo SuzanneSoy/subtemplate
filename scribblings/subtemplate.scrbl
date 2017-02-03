@@ -1,13 +1,13 @@
 #lang scribble/manual
 @require[scriblib/footnote
-         @for-label[subtemplate/template-subscripts
+         @for-label[subtemplate/private/template-subscripts
                     syntax/parse/experimental/template
                     racket/base]]
 
 @title{Subtemplate}
 @author[@author+email["Georges Dupéron" "georges.duperon@gmail.com"]]
 
-@defmodule[subtemplate/template-subscripts]
+@defmodule[subtemplate/private/template-subscripts]
 
 @defform*[{(subtemplate template)
            (subtemplate template #:properties (prop ...))}
@@ -39,17 +39,17 @@
 
 @section{Overriding the default @racket[#'…] and @racket[#`…]}
 
-@defmodule[subtemplate/override]
+@defmodule[subtemplate/private/override]
 
-The @racketmodname[subtemplate/override] module re-provides
+The @racketmodname[subtemplate/private/override] module re-provides
 @racket[subtemplate] as @racket[syntax], and @racket[quasisubtemplate] as
 @racket[quasisyntax]. This allows @racketmodname[subtemplate] to be used via
 the reader shorthands @racket[#'…] and @racket[#`…].
 
-The @racketmodname[subtemplate/override] module also re-provides
+The @racketmodname[subtemplate/private/override] module also re-provides
 @racketmodname[stxparse-info/parse] and @racketmodname[stxparse-info/case].
 
-The @racketmodname[subtemplate/override] module also re-provides
+The @racketmodname[subtemplate/private/override] module also re-provides
 @racketmodname[stxparse-info/parse/experimental/template], but without
 @racket[template] and @racket[quasitemplate], which are remapped to their
 @racket[sub] equivalents, and without @racket[template/loc] and

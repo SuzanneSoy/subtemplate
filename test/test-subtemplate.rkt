@@ -1,5 +1,5 @@
 #lang racket
-(require subtemplate/template-subscripts
+(require subtemplate/private/template-subscripts
          stxparse-info/parse
          stxparse-info/parse/experimental/template
          stxparse-info/case

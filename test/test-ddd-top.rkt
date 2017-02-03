@@ -1,8 +1,8 @@
 #lang racket
 
-(require subtemplate/top-subscripts
-         subtemplate/ddd-forms
-         (except-in subtemplate/override ?? ?@)
+(require subtemplate/private/top-subscripts
+         subtemplate/private/ddd-forms
+         (except-in subtemplate/private/override ?? ?@)
          stxparse-info/case
          stxparse-info/parse
          rackunit

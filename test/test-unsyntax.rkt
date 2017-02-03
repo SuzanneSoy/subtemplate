@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require subtemplate/top-subscripts
-         subtemplate/ddd-forms
-         subtemplate/unsyntax-preparse
-         subtemplate/template-subscripts
-         (except-in subtemplate/override ?? ?@)
+(require subtemplate/private/top-subscripts
+         subtemplate/private/ddd-forms
+         subtemplate/private/unsyntax-preparse
+         subtemplate/private/template-subscripts
+         (except-in subtemplate/private/override ?? ?@)
          stxparse-info/case
          stxparse-info/parse
          rackunit

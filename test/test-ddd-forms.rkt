@@ -1,6 +1,6 @@
 #lang racket
 
-(require subtemplate/ddd-forms
+(require subtemplate/private/ddd-forms
          stxparse-info/case
          stxparse-info/parse
          rackunit

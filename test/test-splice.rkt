@@ -1,6 +1,6 @@
 #lang racket
 
-(require subtemplate/ddd-forms
+(require subtemplate/private/ddd-forms
          rackunit)
 
 (check-equal? (let ([l '(4 5 6)])

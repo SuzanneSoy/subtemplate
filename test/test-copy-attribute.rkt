@@ -1,6 +1,6 @@
 #lang racket
 
-(require subtemplate/copy-attribute
+(require subtemplate/private/copy-attribute
          stxparse-info/parse
          stxparse-info/parse/experimental/template
          phc-toolkit/untyped
