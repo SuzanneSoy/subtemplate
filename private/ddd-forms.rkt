@@ -1,8 +1,7 @@
 #lang racket/base
 (provide begin
-         define
          let
-         (rename-out [begin #%intef-begin])
+         #%intdef-begin
          (rename-out [app #%app])
          ??
          ?if
@@ -91,15 +90,17 @@
                                     #,(nest* (ddd %) e ooo*)))
     (pattern {~seq e :ooo+}
              ;#:with expanded #`(apply values #,(ddd* e ooo*))
-             #:with expanded (ddd* e ooo*))
+             #:with expanded #`(splicing-list #,(ddd* e ooo*)))
     (pattern other
              #:with expanded #'other)))
 
 (define-syntax/parse (begin stmt:stmt …)
   (template (-begin (?@ stmt.expanded) …)))
 
+(define-syntax #%intdef-begin (make-rename-transformer #'begin))
+
 (define-syntax/parse (let {~optional name:id} ([var . val] …) . body)
-  (template (-let (?? name) ([var (begin . val)] …) (begin . body))))
+  (template (-let (?? name) ([var (begin . val)] …) (#%intdef-begin . body))))
 
 (begin-for-syntax
   (define-splicing-syntax-class arg

@@ -6,9 +6,10 @@
          syntax/macro-testing
          phc-toolkit/untyped)
 
-(check-equal? (syntax-parse #'(1 #:kw 3)
-                [({~and {~or x:nat #:kw}} …)
-                 (?? x 'missing) …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'(1 #:kw 3)
+                 [({~and {~or x:nat #:kw}} …)
+                  (?? x 'missing) …]))
               '(1 missing 3))
 
 (check-equal? (syntax-parse #'(1 #:kw 3)

@@ -169,45 +169,53 @@
               '(1 2 3 4 5 6))
 
 ;; Implicit (list _), could also be changed to an implicit (values).
-(check-equal? (syntax-parse #'(([1 2 3] [4 5 6]) [a])
-                [(([x …] …) [y …])
-                 x … …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'(([1 2 3] [4 5 6]) [a])
+                 [(([x …] …) [y …])
+                  x … …]))
               '(1 2 3 4 5 6))
 
 ;; TODO: expr … inside begin and let
-(check-equal? (syntax-case #'((1 2 3) (4 5)) ()
-                [((x …) …)
-                 (let ()
-                   (list (length (syntax->list #'(x …)))
-                         (+ (syntax-e #'x) 3) …)
-                   …)])
+(check-equal? (list ;; unwrap the splice
+               (syntax-case #'((1 2 3) (4 5)) ()
+                 [((x …) …)
+                  (let ()
+                    (list (length (syntax->list #'(x …)))
+                          (+ (syntax-e #'x) 3) …)
+                    …)]))
               '([3 4 5 6]
                 [2 7 8]))
 
-(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                [([x …] …)
-                 x … …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'([1 2 3] [4 5 6])
+                 [([x …] …)
+                  x … …]))
               '(1 2 3 4 5 6))
-(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                [([x …] …)
-                 (x …) …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'([1 2 3] [4 5 6])
+                 [([x …] …)
+                  (x …) …]))
               '((1 2 3) (4 5 6)))
-(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                [([x …] …)
-                 ((list x) …) …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'([1 2 3] [4 5 6])
+                 [([x …] …)
+                  ((list x) …) …]))
               '(((1) (2) (3)) ((4) (5) (6))))
-(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                [([x …] …)
-                 ((+ x 10) …) …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'([1 2 3] [4 5 6])
+                 [([x …] …)
+                  ((+ x 10) …) …]))
               '((11 12 13) (14 15 16)))
-(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                [([x …] …)
-                 (begin ((+ x 10) …) …)])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'([1 2 3] [4 5 6])
+                 [([x …] …)
+                  (begin ((+ x 10) …) …)]))
               '((11 12 13) (14 15 16)))
-(check-equal? (syntax-parse #'([1 2 3] [4 5 6])
-                [([x …] …)
-                 (define/with-syntax y (+ x 10)) … …
-                 y … …])
+(check-equal? (list ;; unwrap the splice
+               (syntax-parse #'([1 2 3] [4 5 6])
+                 [([x …] …)
+                  (define/with-syntax y (+ x 10)) … …
+                  y … …]))
               '(11 12 13 14 15 16))
 
 ;; Implicit apply with (+ y … …)

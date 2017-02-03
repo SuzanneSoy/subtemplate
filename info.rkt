@@ -9,7 +9,8 @@
                "alexis-util"
                "scope-operations"))
 (define build-deps '("scribble-lib"
-                     "racket-doc"))
+                     "racket-doc"
+                     "scribble-math"))
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
 (define pkg-desc "Various enhancements on syntax templates")
 (define version "1.0")
