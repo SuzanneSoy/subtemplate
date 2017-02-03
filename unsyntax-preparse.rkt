@@ -1,6 +1,8 @@
 #lang racket/base
 
-(provide quasitemplate-ddd
+(provide template-ddd
+         subtemplate-ddd
+         quasitemplate-ddd
          quasisubtemplate-ddd)
 
 (require (rename-in stxparse-info/parse/experimental/template
