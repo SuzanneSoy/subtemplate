@@ -12,6 +12,7 @@
          stxparse-info/parse
          stxparse-info/case
          syntax/stx
+         racket/list
          (for-syntax racket/base
                      racket/list
                      racket/syntax
@@ -146,7 +147,9 @@
                                      `(,form (,new-tmpl) . ,#'opts)
                                      stx
                                      stx))
-                  (check-single-result result (quote-syntax stx) 'form)))))))]))
+                  (check-single-result result
+                                       (quote-syntax #,stx)
+                                       'form)))))))]))
 
 (define-syntax quasitemplate-ddd (*template-ddd #t #'quasitemplate))
 (define-syntax quasisubtemplate-ddd (*template-ddd #t #'quasisubtemplate))

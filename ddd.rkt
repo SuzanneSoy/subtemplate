@@ -135,7 +135,7 @@
 #;(define-syntax-rule (?@ v ...)
     (splicing-list (list v ...)))
 (define (?@ . vs) (splicing-list vs))
-(define (?@@ . vs) (map splicing-list vs))
+(define (?@@ . vs) (splicing-list (map splicing-list vs)))
 
 (define-for-syntax ((?* mode) stx)
   (define (parse stx)
@@ -173,14 +173,14 @@
   (syntax-case stx (else)
     [(self) #'(raise-syntax-error '?cond
                                   "all branches contain omitted elements"
-                                  self)]
+                                  (quote-syntax self))]
     [(self [else]) #'(?@)]
     [(self [else . v]) #'(begin . v)]
     [(self [condition v . vs] . rest)
      (not (free-identifier=? #'condition #'else))
-     (let ([else (datum->syntax stx `(,#'self . ,#'rest) stx stx)])
+     (let ([otherwise (datum->syntax stx `(,#'self . ,#'rest) stx stx)])
        (datum->syntax stx
-                      `(,#'?if ,#'condition ,#'(begin v . vs) . ,else)
+                      `(,#'?if ,#'condition ,#'(begin v . vs) ,otherwise)
                       stx
                       stx))]))
 
