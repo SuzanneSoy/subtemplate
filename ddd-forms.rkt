@@ -5,7 +5,12 @@
          (rename-out [begin #%intef-begin])
          (rename-out [app #%app])
          ??
-         ?@)
+         ?@
+         splice-append
+         splice-append*
+         splicing-list?
+         splicing-list
+         splicing-list-l)
 
 (require racket/list
          subtemplate/ddd
@@ -98,30 +103,31 @@
              #:with expanded #`(splicing-list #,(ddd* e ooo*)))
     (pattern other
              ;#:with expanded #'(#%app list other)
-             #:with expanded #'other)))
+             #:with expanded #'other))
+  (define-syntax-class not-stx-pair
+    (pattern {~not (_ . _)})))
 (define-syntax app
   (syntax-parser
-    #;[(_ fn {~and arg {~not {~literal …}}} …) ;; TODO: check for ?@ too
-     #'(#%app fn arg …)]
-    [{~and (_ fn arg:arg …)
+    [{~and (_ fn arg:arg … #;.rest:not-stx-pair)
            {~not (_ _ {~literal …} . _)}} ;; not fn directly followed by a …
      ;#'(#%app apply fn (#%app append arg.expanded …))
      (syntax/top-loc this-syntax
-       (#%app apply fn (#%app splice-append arg.expanded …)))]
-    [(_ arg:arg …) ;; shorthand for list creation
+       (#%app apply fn (#%app splice-append arg.expanded … #;#:rest #;rest)))]
+    [(_ arg:arg … #;.rest:not-stx-pair) ;; shorthand for list creation
      ;#'(#%app apply list (#%app append arg.expanded …))
      (syntax/top-loc this-syntax
-       (#%app apply list (#%app splice-append arg.expanded …)))]))
+       (#%app apply list (#%app splice-append arg.expanded … #;#:rest #;rest)))]))
 
-(define (splice-append . l*) (splice-append* l*))
+(define (splice-append #:rest [rest '()] . l*)
+  (splice-append* (if (null? rest) l* (append l* rest))))
 (define (splice-append* l*)
   (cond
     [(pair? l*)
      (if (splicing-list? (car l*))
-         (append (splice-append* (splicing-list-l (car l*)))
-                 (splice-append* (cdr l*)))
+         (splice-append* (append (splicing-list-l (car l*))
+                                 (cdr l*)))
          (cons (car l*) (splice-append* (cdr l*))))]
     [(splicing-list? l*)
-     (splicing-list-l l*)]
+     (splice-append* (splicing-list-l l*))]
     [else ;; should be null.
      l*]))

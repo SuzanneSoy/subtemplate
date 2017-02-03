@@ -125,32 +125,41 @@
   (define present-variables (map syntax-e present-variables*))
   present-variables)
 
-(struct splicing-list (l))
+;(struct splicing-list (l) #:transparent)
+(require "cross-phase-splicing-list.rkt")
+
 ;; TODO: dotted rest, identifier macro
 #;(define-syntax-rule (?@ v ...)
     (splicing-list (list v ...)))
-(define ?@ (compose splicing-list list))
+(define (?@ . vs) (splicing-list vs))
 
-(define-syntax/case (?? a b) ()
-  (define/with-syntax (pvar …) (current-pvars-shadowers))
+(define-syntax (?? stx)
+  (define (parse stx)
+    (syntax-case stx ()
+      [(self a)
+       (parse (datum->syntax stx `(,#'self ,#'a ,#'(?@)) stx stx))]
+      [(_ a b)
+       (let ()
+         (define/with-syntax (pvar …) (current-pvars-shadowers))
 
-  (define/with-syntax expanded-a
-    (local-expand #'(detect-present-pvars (pvar …) a) 'expression '()))
+         (define/with-syntax expanded-a
+           (local-expand #'(detect-present-pvars (pvar …) a) 'expression '()))
 
-  (define present-variables (extract-present-variables #'expanded-a stx))
+         (define present-variables (extract-present-variables #'expanded-a stx))
 
-  (define/with-syntax (test-present-attribute …)
-    (for/list ([present? (in-list present-variables)]
-               [pv (in-syntax #'(pvar …))]
-               #:when present?
-               ;; only attributes can have missing elements.
-               #:when (eq? 'attr (car (attribute-info pv '(pvar attr)))))
-      #`(attribute* #,pv)))
+         (define/with-syntax (test-present-attribute …)
+           (for/list ([present? (in-list present-variables)]
+                      [pv (in-syntax #'(pvar …))]
+                      #:when present?
+                      ;; only attributes can have missing elements.
+                      #:when (eq? 'attr (car (attribute-info pv '(pvar attr)))))
+             #`(attribute* #,pv)))
              
 
-  #'(if (and test-present-attribute …)
-        a
-        b))
+         #'(if (and test-present-attribute …)
+               a
+               b))]))
+  (parse stx))
 
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …) (current-pvars-shadowers))

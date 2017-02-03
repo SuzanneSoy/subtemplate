@@ -10,10 +10,10 @@
          phc-toolkit/untyped
          (only-in racket/base [... …]))
 
-#;(check-equal? (syntax-parse #'(a b c)
-                  [(xᵢ …)
-                   yᵢ])
-                '(a/y b/y c/y))
+(check-equal? (syntax-parse #'(a b c)
+                [(xᵢ …)
+                 yᵢ])
+              '(a/y b/y c/y))
 
 (check-equal? (syntax-case #'(a b c) ()
                 [(xᵢ …)

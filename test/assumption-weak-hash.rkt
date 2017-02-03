@@ -1,5 +1,9 @@
 #lang racket
 
+;; We use a weak hash to associate a pvar xᵢ with its the values contained in
+;; the derived yᵢ. The assumptions below must hold, otherwise we would risk
+;; memory leaks.
+
 (require (for-syntax racket/private/sc)
          rackunit)
 

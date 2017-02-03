@@ -11,6 +11,6 @@
 (define build-deps '("scribble-lib"
                      "racket-doc"))
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
-(define pkg-desc "Description Here")
-(define version "0.0")
+(define pkg-desc "Various enhancements on syntax templates")
+(define version "1.0")
 (define pkg-authors '("Georges Dupéron"))

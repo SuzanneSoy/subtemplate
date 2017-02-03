@@ -123,7 +123,7 @@
      (unless (attribute force-no-stxinfo)
        (for ([sym (in-list '(syntax-parse define/syntax-parse syntax-parser
                               syntax-case define/with-syntax with-syntax))])
-         (let ([shadower (syntax-local-get-shadower (datum->syntax #'self sym))]
+         (let ([shadower (datum->syntax #'self sym)];syntax-local-get-shadower ?
                [good (datum->syntax #'here sym)])
            (when (or (not (identifier-binding shadower))
                      (not (free-identifier=? shadower good)))
