@@ -45,7 +45,8 @@ script:
  - raco test -p subtemplate
  - raco setup --check-pkg-deps --pkgs subtemplate
  - raco pkg install doc-coverage
- - raco doc-coverage subtemplate
+ #- raco doc-coverage -s 'pattern-expander\?|pattern-expander|prop:pattern-expander|syntax-local-syntax-parse-pattern-introduce|\.\.\.\+|attribute|boolean|char|character|define-conventions|define-eh-alternative-set|define-literal-set|define-splicing-syntax-class|define-syntax-class|define/syntax-parse|exact-integer|exact-nonnegative-integer|exact-positive-integer|expr|expr/c|id|identifier|integer|kernel-literals|keyword|literal-set->predicate|nat|number|pattern|static|str|syntax-parse|syntax-parser|this-syntax|~!|~and|~between|~bind|~commit|~datum|~delimit-cut|~describe|~do|~fail|~literal|~not|~once|~optional|~or|~parse|~peek|~peek-not|~post|~rest|~seq|~var|datum-case|define/with-syntax|syntax-case|syntax-case\*|with-datum|with-syntax' subtemplate
+ - raco doc-coverage subtemplate/light
  #- raco pkg install --deps search-auto cover cover-codecov
  #- raco cover -b -f codecov -d $TRAVIS_BUILD_DIR/coverage .
 
