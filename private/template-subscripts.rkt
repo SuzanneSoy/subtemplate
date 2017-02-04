@@ -269,18 +269,19 @@
 
   ;; Draw arrows in DrRacket.
   (with-arrows
-   (define subscripts (subscript-equal? #'bound #'binder₀))
+   (define bound-subscripts (extract-subscripts #'bound))
+   (define binder-subscripts (extract-subscripts #'binder₀))
    (define bound-id-str (identifier->string #'bound))
    (for ([binder (in-list (syntax->list #'(binder₀ binderᵢ …)))])
      (define binder-id-str (identifier->string binder))
      (record-sub-range-binders! (vector #'bound
                                         (- (string-length bound-id-str)
-                                           (string-length subscripts))
-                                        (string-length subscripts)
+                                           (string-length bound-subscripts))
+                                        (string-length bound-subscripts)
                                         binder
                                         (- (string-length binder-id-str)
-                                           (string-length subscripts))
-                                        (string-length subscripts))))
+                                           (string-length binder-subscripts))
+                                        (string-length binder-subscripts))))
    #;(define binder0-id-str (identifier->string #'binder0))
    #;(record-sub-range-binders! (vector #'bound
                                         (- (string-length bound-id-str)

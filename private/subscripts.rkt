@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide subscript-equal?
+         extract-subscripts
          drop-subscripts
          find-subscript-binders)
 
@@ -15,8 +16,11 @@
 
 (define/contract (extract-subscripts id)
   (-> identifier? string?)
-  (cadr (regexp-match #px".(_.+|[ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ]*)$"
-                     (symbol->string (syntax-e id)))))
+  (let ([match (regexp-match #px".(_.+|[ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥₓᵦᵧᵨᵩᵪ]*)$"
+                             (symbol->string (syntax-e id)))])
+     (if (>= (length match) 2)
+         (cadr match)
+         "")))
 
 (define/contract (string-replace* str from* to*)
   (->i ([str string?]
