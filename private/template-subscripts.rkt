@@ -17,6 +17,7 @@
          syntax/id-table
          (subtract-in racket/syntax stxparse-info/case)
          "copy-attribute.rkt"
+         "lifted-variables-communication.rkt"
          (for-syntax (subtract-in racket/base srfi/13)
                      "patch-arrows.rkt"
                      "subscripts.rkt"

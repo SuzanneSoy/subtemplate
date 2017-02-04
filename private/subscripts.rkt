@@ -116,7 +116,6 @@
                        (syntax/c (listof identifier?)) ; binders
                        (syntax/c (listof identifier?)) ; unique-at-runtime ids
                        exact-nonnegative-integer?)))   ; ellipsis-depth
-
   (let/cc return
     ;; EARLY RETURN (already a pattern variable)
     (when (syntax-pattern-variable?

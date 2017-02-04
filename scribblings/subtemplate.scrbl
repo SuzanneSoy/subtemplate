@@ -183,8 +183,8 @@ to their equivalents from this library, and without @orig:template/loc] and
  corresponding @racket[xᵢ …] which is bound as a syntax pattern variable, in
  the same way as @racket[subtemplate].}
 
-@defform*[{(template template)
-          (template template #:properties (prop ...))}
+@defform*[{(template _template)
+          (template _template #:properties (prop ...))}
          #:contracts
          ([prop identifier?])]{
                                 

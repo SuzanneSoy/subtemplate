@@ -7,6 +7,8 @@
          phc-toolkit/untyped
          subtemplate/private/copy-attribute
          (prefix-in - syntax/parse/private/residual)
+         racket/stxparam
+         "lifted-variables-communication.rkt"
          (for-syntax racket/contract
                      racket/syntax
                      phc-toolkit/untyped
@@ -20,6 +22,7 @@
 
 (define-for-syntax x-pvar-scope (make-syntax-introducer))
 (define-for-syntax x-pvar-present-marker (make-syntax-introducer))
+(define-for-syntax x-lifted-pvar-marker (make-syntax-introducer))
 
 (begin-for-syntax
   (define/contract (attribute-real-valvar attr)
@@ -114,6 +117,7 @@
      bound-identifier=?))
 
 (define-for-syntax (extract-present-variables expanded-form stx)
+  ;; present-variables vector
   (define present-variables** (find-present-variables-vector expanded-form))
   (define present-variables*
     (and (vector? present-variables**)
@@ -126,7 +130,23 @@
                          " pattern variables present in the body.")
                         stx))
   (define present-variables (map syntax-e present-variables*))
-  present-variables)
+
+  ;; lifted variables
+  (define lifted-variables
+    (map (λ (id)
+           (define prop (syntax-property id 'lifted-pvar))
+           (unless ((cons/c symbol? syntax?) prop)
+             (raise-syntax-error 'ddd
+                                 (string-append
+                                  "internal error: 'lifted-pvar property was"
+                                  " missing or not a (cons/c symbol? syntax?).")
+                                 stx))
+           prop)
+         (filter (λ (id) (all-scopes-in? x-lifted-pvar-marker id))
+                 (extract-ids expanded-form))))
+    
+  
+  (values present-variables lifted-variables))
 
 ;(struct splicing-list (l) #:transparent)
 (require "cross-phase-splicing-list.rkt")
@@ -151,8 +171,10 @@
                          'expression
                          '()))
 
-         (define present-variables
+         (define-values (present-variables lifted-variables)
            (extract-present-variables #'expanded-condition stx))
+
+         (displayln lifted-variables)
 
          (define/with-syntax (test-present-attribute …)
            (for/list ([present? (in-list present-variables)]
@@ -201,20 +223,46 @@
          (datum->syntax stx `(,#'self ,#'a ,else) stx stx))]))
   (parse stx))
 
+;;; The body is wrapped in a lambda, with one pvarᵢ for each pvar within scope.
+;;; This is used to shadow the pvar with one equal to pvarᵢ, which iterates over
+;;; the original pvar. Inside that function, the body is wrapped with
+;;; detect-present-pvars, which fully expands the body, leaving a quoted vector
+;;; of booleans indicating which pvars are actually used within the body. The
+;;; vector is identified by the x-pvar-present-marker scope (created with
+;;; make-syntax-introducer), and the extract-present-variables utility finds
+;;; that vector in the fully-expanded syntax object.
+;;; Auto-generated subscripted pattern variables would normally be derived from
+;;; the shadowed pvar. However, this means that within two different ddd forms,
+;;; the auto-generated subscripted pvars would be derived from different pvars
+;;; (two shadowed copies of the original). This means that the generated pvars
+;;; would contain different values. To solve this problem, ddd collaborates with
+;;; template-subscripts.rkt. When a subscripted pvar is encountered within a ddd
+;;; form, template-subscripts.rkt does not auto-generate its contents.
+;;; Instead, it extracts the value of the variable from an additionnal
+;;; lifted-variables argument (to the function wrapping the body), and notes down,
+;;; marking it with the special scope x-lifted-pvar-marker, so that
+;;; extract-present-variables can find it.
+;;; In effect, this is semantically equivalent to lifting the problematic
+;;; pvar outside of the body.
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …) (current-pvars-shadowers))
   
   (define-temp-ids "~aᵢ" (pvar …))
   (define/with-syntax f
-    #`(#%plain-lambda (pvarᵢ …)
+    #`(#%plain-lambda (pvarᵢ … lifted-variables-hash)
                       (shadow pvar pvarᵢ) …
-                      (detect-present-pvars (pvar …)
-                                            body)))
+                      (syntax-parameterize ([lift-late-pvars-param
+                                             #'lifted-variables-hash])
+                        (detect-present-pvars (pvar …)
+                                              body))))
 
   ;; extract all the variable ids present in f
   (define/with-syntax expanded-f (local-expand #'f 'expression '()))
 
-  (define present-variables (extract-present-variables #'expanded-f stx))
+  (define-values (present-variables lifted-variables)
+    (extract-present-variables #'expanded-f stx))
+
+  (displayln lifted-variables)
 
   (unless (ormap identity present-variables)
     (raise-syntax-error 'ddd
@@ -250,7 +298,7 @@
            present?+pvars)))
 
   #'(map#f* (λ (iterated-pvarᵢ …)
-              (expanded-f filling-pvar …))
+              (expanded-f filling-pvar … #false)) ;; TODO: the lifted pvars here …………………………………………
             (list (quote-syntax iterated-pvar)
                   …)
             (list (attribute* iterated-pvar)
