@@ -115,6 +115,9 @@
                    l*)))))
 
 (define-for-syntax (sub*template self-form tmpl-form)
+  (sub*template-impl self-form tmpl-form))
+
+(define-for-syntax (sub*template-impl self-form tmpl-form)
   (syntax-parser
     [(self {~optional {~and #:force-no-stxinfo force-no-stxinfo}}
            {~optkw #:props (prop:id ...)}
@@ -194,15 +197,14 @@
 (define-syntax quasisubtemplate
   (sub*template 'quasisubtemplate #'quasitemplate))
 
-(define/contract (multi-hash-ref! h keys to-set)
+(define/contract (multi-hash-ref! h keys)
   ;; This assumes that the hash does not get mutated during the execution of
   ;; this function.
   (-> (and/c (hash/c symbol? any/c #:immutable #f) hash-weak?)
       (listof symbol?)
-      any/c
       any/c)
   (define val (or (for/or ([k (in-list keys)]) (hash-ref h k #f))
-                  to-set))
+                  (make-free-id-table))) ;; create an empty table by default.
   ;; Set the existing value (or new to-set if none) on all keys which
   ;; are not present in the hash table.
   (for ([k (in-list keys)]) (hash-ref! h k val))
@@ -327,64 +329,70 @@
        (define-values (temp-id-table)
          (multi-hash-ref! derived-valvar-cache
                           (list unique-at-runtime-idᵢ
-                                …)
-                          (make-free-id-table)))
+                                …)))
        (define-values (temp-cached)
          (free-id-table-ref! temp-id-table
                              (quote-syntax bound)
                              temp-generated))
-       ;; TODO: we should check that if the hash-table access worked,
-       ;; any new pvars are compatible with the old ones on which the cache is
-       ;; based (in the sense of "no new non-#f positions")
-
-       ;; Check that all derived pvars for this subscript from all binders
-       ;; have the same shape, i.e. we wouldn't want some elements to be missing
-       ;; (as in ~optional) at some position from one derived pvar, but not from
-       ;; others. This check implies that the original binder used did not
-       ;; introduce new elements compared to the binders used for other derived
-       ;; pvars, e.g:
-       ;; (syntax-parse #'([1 2 3] #f)
-       ;;   [({~and {~or (xᵢ ...) #f}} ...)
-       ;;    (subtemplate ({?? (yᵢ ...) _} ...)) ;; => ((1/y 2/y 3/y) _)
-       ;;    (syntax-case #'([a b c] [d e]) ()
-       ;;      ;; introduces elements [d e] which were unknown when yᵢ was
-       ;;      ;; generated:
-       ;;      [((wᵢ ...) ...)
-       ;;       ;; Would give ((a/z b/z c/z) (d/z e/z)), but this is
-       ;;       ;; inconsistent with the shape of yᵢ.
-       ;;       (subtemplate ({?? (zᵢ ...) _} ...))])])
-       ;; The check must also compare temp-generated, even if it was not
-       ;; assigned to #'bound, so that it also cathes the error if we replace
-       ;; zᵢ with yᵢ in the example above.
-       (unless ((ellipsis-count/c ellipsis-depth #:same-shape #t)
-                (cons temp-generated
-                      (free-id-table-map temp-id-table (λ (k v) v))))
-         ;; TODO: For now this will just blow up, a better error message would
-         ;; be nice. Especially saying which one failed.
-         (raise-syntax-error
-          'sublist
-          (format (string-append
-                   "some derived variables do not have the same ellipsis"
-                   " shape\n"
-                   "  depth: ~a\n"
-                   "  attributes...:\n"
-                   "   ~a\n"
-                   "  attribute ~a if it were generated here...:\n"
-                   "   ~a")
-                  'ellipsis-depth
-                  (string-join (free-id-table-map
-                                temp-id-table
-                                (λ (k v)
-                                  (format "~a => ~a"
-                                          (syntax-e k)
-                                          (syntax->datum
-                                           (datum->syntax #f v)))))
-                               "\n   ")
-                  'bound
-                  (syntax->datum
-                   (datum->syntax #f temp-generated)))
-          (quote-syntax whole-form-id)
-          (quote-syntax bound)
-          (free-id-table-map temp-id-table (λ (k v) k))))
+       
+       (check-derived-ellipsis-shape ellipsis-depth
+                                     temp-generated
+                                     temp-id-table
+                                     (quote-syntax whole-form-id)
+                                     (quote-syntax bound))
        
        (copy-raw-syntax-attribute bound temp-cached ellipsis-depth #t))))
+
+(define (check-derived-ellipsis-shape ellipsis-depth
+                                      temp-generated
+                                      temp-id-table
+                                      whole-form-id
+                                      bound)
+  ;; Check that all derived pvars for this subscript from all binders
+  ;; have the same shape, i.e. we wouldn't want some elements to be missing
+  ;; (as in ~optional) at some position from one derived pvar, but not from
+  ;; others. This check implies that the original binder used did not
+  ;; introduce new elements compared to the binders used for other derived
+  ;; pvars, e.g:
+  ;; (syntax-parse #'([1 2 3] #f)
+  ;;   [({~and {~or (xᵢ ...) #f}} ...)
+  ;;    (subtemplate ({?? (yᵢ ...) _} ...)) ;; => ((1/y 2/y 3/y) _)
+  ;;    (syntax-case #'([a b c] [d e]) ()
+  ;;      ;; introduces elements [d e] which were unknown when yᵢ was
+  ;;      ;; generated:
+  ;;      [((wᵢ ...) ...)
+  ;;       ;; Would give ((a/z b/z c/z) (d/z e/z)), but this is
+  ;;       ;; inconsistent with the shape of yᵢ.
+  ;;       (subtemplate ({?? (zᵢ ...) _} ...))])])
+  ;; The check must also compare temp-generated, even if it was not
+  ;; assigned to #'bound, so that it also cathes the error if we replace
+  ;; zᵢ with yᵢ in the example above.
+  (unless ((ellipsis-count/c ellipsis-depth #:same-shape #t)
+           (cons temp-generated
+                 (free-id-table-map temp-id-table (λ (k v) v))))
+    ;; TODO: For now this will just blow up, a better error message would
+    ;; be nice. Especially saying which one failed.
+    (raise-syntax-error
+     'sublist
+     (format (string-append
+              "some derived variables do not have the same ellipsis shape\n"
+              "  depth: ~a\n"
+              "  attributes...:\n"
+              "   ~a\n"
+              "  attribute ~a if it were generated here...:\n"
+              "   ~a")
+             'ellipsis-depth
+             (string-join (free-id-table-map
+                           temp-id-table
+                           (λ (k v)
+                             (format "~a => ~a"
+                                     (syntax-e k)
+                                     (syntax->datum
+                                      (datum->syntax #f v)))))
+                          "\n   ")
+             'bound
+             (syntax->datum
+              (datum->syntax #f temp-generated)))
+     whole-form-id
+     bound
+     (free-id-table-map temp-id-table (λ (k v) k)))))
