@@ -216,7 +216,7 @@
 
 (define-syntax (lifted-var-macro stx)
   (syntax-case stx ()
-    [(_ bound depth)
+    [(_ bound)
      #`(car (subtemplate/attribute* bound))]))
 
 (define-syntax subtemplate/attribute*

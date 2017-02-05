@@ -102,6 +102,14 @@
                       (list (list #'yᵢ …) …)]))
               '([a/y b/y c/y] [d/y e/y]))
 
+(check-equal? ((λ (result) (syntax->datum (datum->syntax #f result)))
+               (syntax-parse #'[(([h] [i]  10)   ([j] 12  13  [m]))
+                                (([a] #:kw #:kw) ([d] [e] [f] [g]))]
+                 [[(({~and {~or (yᵢ:id …) :nat}} …) …)
+                   (({~and {~or (xᵢ:id …) #:kw}} …) …)]
+                  (list (list (?? (list #'zᵢ …) 'missing) …) …)]))
+              '(([a/z] [i/z] missing) ([d/z] [e/z] [f/z] [g/z])))
+
 (check-match (syntax-case #'(a b c) ()
                [(xᵢ …)
                 ([list xᵢ #'yᵢ] …)])

@@ -94,10 +94,10 @@
 (define (map#f* f attr-ids l*)
   (for ([l (in-list l*)]
         [attr-id (in-list attr-ids)])
-  (when (eq? l #f)
-    (raise-syntax-error (syntax-e attr-id)
-                        "attribute contains an omitted element"
-                        attr-id)))
+    (when (eq? l #f)
+      (raise-syntax-error (syntax-e attr-id)
+                          "attribute contains an omitted element"
+                          attr-id)))
   (unless (apply =* (map length l*))
     (raise-syntax-error 'ddd
                         "incompatible ellipis counts for template"))
@@ -106,14 +106,14 @@
 
 (define-for-syntax (current-pvars-shadowers)
   (remove-duplicates
-     (map syntax-local-get-shadower
-          (map syntax-local-introduce
-               (filter (conjoin identifier?
-                                (λ~> (syntax-local-value _ (thunk #f))
-                                     syntax-pattern-variable?)
-                                attribute-real-valvar)
-                       (reverse (current-pvars)))))
-     bound-identifier=?))
+   (map syntax-local-get-shadower
+        (map syntax-local-introduce
+             (filter (conjoin identifier?
+                              (λ~> (syntax-local-value _ (thunk #f))
+                                   syntax-pattern-variable?)
+                              attribute-real-valvar)
+                     (reverse (current-pvars)))))
+   bound-identifier=?))
 
 (define-for-syntax (extract-present-variables expanded-form stx)
   ;; present-variables vector
@@ -165,13 +165,18 @@
          (define/with-syntax (pvar …) (current-pvars-shadowers))
 
          (define/with-syntax expanded-condition
-           (local-expand #'(detect-present-pvars (pvar …) condition)
+           (local-expand #'(λ (lifted-variables-hash)
+                             (syntax-parameterize ([lift-late-pvars-param
+                                                    #'lifted-variables-hash])
+                               (detect-present-pvars (pvar …) condition)))
                          'expression
                          '()))
 
          (define-values (present-variables lifted-variables)
            (extract-present-variables #'expanded-condition stx))
 
+         (define/with-syntax ([lifted-key . lifted-macro+args] …)
+           lifted-variables)
          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TODO: lifted stuff!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
          (define/with-syntax (test-present-attribute …)
@@ -182,9 +187,16 @@
                       #:when (eq? 'attr (car (attribute-info pv '(pvar attr)))))
              #`(attribute* #,pv)))
          
-         #`(if (and test-present-attribute …)
-               #,(if (eq? mode 'if) #'a #'condition)
-               b))]))
+         #`(let ([lifted-list (list (cons 'lifted-key
+                                          lifted-macro+args)
+                                    …)])
+             (if (and test-present-attribute …
+                      (andmap cdr lifted-list))
+                 #,(if (eq? mode 'if)
+                       #'a
+                       #'(expanded-condition
+                          (make-hash lifted-list)))
+                 b)))]))
   (parse stx))
 
 (define-syntax ?if (?* 'if))
@@ -260,7 +272,7 @@
   (define-values (present-variables lifted-variables)
     (extract-present-variables #'expanded-f stx))
 
-  (define/with-syntax ([lifted-key lifted-macro+args …] …) lifted-variables)
+  (define/with-syntax ([lifted-key . lifted-macro+args] …) lifted-variables)
 
   (unless (or (ormap identity present-variables)
               (not (null? lifted-variables)))
@@ -303,7 +315,7 @@
             (list (quote-syntax iterated-pvar) …
                   (quote-syntax lifted-key) …) ;; TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! not the real variable
             (list (attribute* iterated-pvar) …
-                  (lifted-macro+args … 1 #;depth?????????????????????????????????????????????????) …)))
+                  lifted-macro+args …)))
 
 (define-syntax/case (shadow pvar new-value) ()
   (match (attribute-info #'pvar '(pvar attr))
@@ -318,9 +330,9 @@
                                   #,(max 0 (sub1 depth))
                                   #t)
      #;#`(define-raw-syntax-mapping pvar
-         tmp-valvar
-         new-value
-         #,(sub1 depth))]))
+           tmp-valvar
+           new-value
+           #,(sub1 depth))]))
 
 (define-for-syntax (extract-ids/tree e)
   (cond
