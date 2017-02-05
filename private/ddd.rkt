@@ -122,7 +122,6 @@
     (and (vector? present-variables**)
          (vector->list present-variables**)))
   (unless ((listof (syntax/c boolean?)) present-variables*)
-    (displayln expanded-form)
     (raise-syntax-error 'ddd
                         (string-append
                          "internal error: could not extract the vector of"
@@ -135,8 +134,6 @@
     (map (λ (id)
            (define prop (syntax-property id 'lifted-pvar))
            (unless ((cons/c symbol? stx-list?) prop)
-             (displayln id)
-             (displayln prop)
              (raise-syntax-error 'ddd
                                  (string-append
                                   "internal error: 'lifted-pvar property was "
@@ -175,7 +172,7 @@
          (define-values (present-variables lifted-variables)
            (extract-present-variables #'expanded-condition stx))
 
-         (displayln lifted-variables)
+         ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TODO: lifted stuff!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
          (define/with-syntax (test-present-attribute …)
            (for/list ([present? (in-list present-variables)]
