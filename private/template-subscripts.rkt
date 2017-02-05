@@ -82,7 +82,7 @@
      (true?
       (and (list? l*)
            (if (and same-shape (> depth 0))
-               (or (andmap false? l*)          ;; all #f
+               (or (andmap false? l*)    ;; all #f
                    (andmap identity l*)) ;; all non-#f
                #t)
            (let ([l* (filter identity l*)])
@@ -114,10 +114,7 @@
                                           (sub1 depth)))
                    l*)))))
 
-(define-for-syntax (sub*template self-form tmpl-form)
-  (sub*template-impl self-form tmpl-form))
-
-(define-for-syntax (sub*template-impl self-form tmpl-form)
+(define-for-syntax (sub*template self-form tmpl-form get-attribute*)
   (syntax-parser
     [(self {~optional {~and #:force-no-stxinfo force-no-stxinfo}}
            {~optkw #:props (prop:id ...)}
@@ -181,21 +178,53 @@
 
      (define/with-syntax whole-form-id (generate-temporary 'whole-subtemplate))
 
-     #`(let-values ()
-         (define-values (whole-form-id) (quote-syntax #,this-syntax))
-         (derive
-          bound (binder …) unique-at-runtime-ids ellipsis-depth whole-form-id)
-         …
-         (let-values ()
-           ;; check that all the binders for a given bound are compatible.
-           ((ellipsis-count/c ellipsis-depth) (list (attribute* binder) …)) …
-           ;; actually call template or quasitemplate
-           #,result))]))
+     (define lift-target (lift-late-pvars-target))
+     (if lift-target
+         (let ()
+           (define/with-syntax ([token . to-insert] …)
+             (stx-map lifted-pvar
+                      (stx-map syntax-e #'(bound …)) ;; name
+                      #`([lifted-var-macro bound] …)))
+           #`(let-values ()
+               (quote-syntax (to-insert …))
+               (copy-raw-syntax-attribute bound
+                                          (hash-ref #,lift-target 'token)
+                                          ellipsis-depth
+                                          #t)
+               …
+               #,(if get-attribute*
+                   #'(list (attribute* bound ) …)
+                   result)))
+         #`(let-values ()
+             (define-values (whole-form-id) (quote-syntax #,this-syntax))
+             (derive bound
+                     (binder …)
+                     unique-at-runtime-ids
+                     ellipsis-depth
+                     whole-form-id)
+             …
+             #,(if get-attribute*
+                   #'(list (attribute* bound ) …)
+                   #`(let-values ()
+                       ;; check that all the binders for a given bound are
+                       ;; compatible.
+                       ((ellipsis-count/c ellipsis-depth)
+                        (list (attribute* binder) …))
+                       …
+                       ;; actually call template or quasitemplate
+                       #,result))))]))
 
+(define-syntax (lifted-var-macro stx)
+  (syntax-case stx ()
+    [(_ bound depth)
+     #`(car (subtemplate/attribute* bound))]))
+
+(define-syntax subtemplate/attribute*
+  (sub*template 'subtemplate #'template #t))
 (define-syntax subtemplate
-  (sub*template 'subtemplate #'template))
+  (sub*template 'subtemplate #'template #f))
 (define-syntax quasisubtemplate
-  (sub*template 'quasisubtemplate #'quasitemplate))
+  (sub*template 'quasisubtemplate #'quasitemplate #f))
 
 (define/contract (multi-hash-ref! h keys)
   ;; This assumes that the hash does not get mutated during the execution of
@@ -341,7 +370,10 @@
                                      (quote-syntax whole-form-id)
                                      (quote-syntax bound))
        
-       (copy-raw-syntax-attribute bound temp-cached ellipsis-depth #t))))
+       (copy-raw-syntax-attribute bound
+                                  temp-cached
+                                  ellipsis-depth
+                                  #t))))
 
 (define (check-derived-ellipsis-shape ellipsis-depth
                                       temp-generated

@@ -22,7 +22,6 @@
 
 (define-for-syntax x-pvar-scope (make-syntax-introducer))
 (define-for-syntax x-pvar-present-marker (make-syntax-introducer))
-(define-for-syntax x-lifted-pvar-marker (make-syntax-introducer))
 
 (begin-for-syntax
   (define/contract (attribute-real-valvar attr)
@@ -135,11 +134,13 @@
   (define lifted-variables
     (map (λ (id)
            (define prop (syntax-property id 'lifted-pvar))
-           (unless ((cons/c symbol? syntax?) prop)
+           (unless ((cons/c symbol? stx-list?) prop)
+             (displayln id)
+             (displayln prop)
              (raise-syntax-error 'ddd
                                  (string-append
-                                  "internal error: 'lifted-pvar property was"
-                                  " missing or not a (cons/c symbol? syntax?).")
+                                  "internal error: 'lifted-pvar property was "
+                                  "missing or not a (cons/c symbol? stx-list?)")
                                  stx))
            prop)
          (filter (λ (id) (all-scopes-in? x-lifted-pvar-marker id))
@@ -262,9 +263,10 @@
   (define-values (present-variables lifted-variables)
     (extract-present-variables #'expanded-f stx))
 
-  (displayln lifted-variables)
+  (define/with-syntax ([lifted-key lifted-macro+args …] …) lifted-variables)
 
-  (unless (ormap identity present-variables)
+  (unless (or (ormap identity present-variables)
+              (not (null? lifted-variables)))
     (raise-syntax-error 'ddd
                         "no pattern variables were found in the body"
                         stx))
@@ -286,7 +288,8 @@
     (define/with-syntax ((_ iterated-pvar iterated-pvarᵢ _ _) …)
       (filter car present?+pvars))
 
-    (when (stx-null? #'(iterated-pvar …))
+    (when (and (stx-null? #'(iterated-pvar …))
+               (null? lifted-variables))
       (no-pvar-to-iterate-error present?+pvars))
     
     ;; If the pvar is iterated, use the iterated pvarᵢ 
@@ -297,12 +300,13 @@
                     [(list #f pv pvᵢ #f _) #'#f])
            present?+pvars)))
 
-  #'(map#f* (λ (iterated-pvarᵢ …)
-              (expanded-f filling-pvar … #false)) ;; TODO: the lifted pvars here …………………………………………
-            (list (quote-syntax iterated-pvar)
-                  …)
-            (list (attribute* iterated-pvar)
-                  …)))
+  #'(map#f* (λ (iterated-pvarᵢ … lifted-key …)
+              (expanded-f filling-pvar …
+                          (make-hash (list (cons 'lifted-key lifted-key) …))))
+            (list (quote-syntax iterated-pvar) …
+                  (quote-syntax lifted-key) …) ;; TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! not the real variable
+            (list (attribute* iterated-pvar) …
+                  (lifted-macro+args … 1 #;depth?????????????????????????????????????????????????) …)))
 
 (define-syntax/case (shadow pvar new-value) ()
   (match (attribute-info #'pvar '(pvar attr))
