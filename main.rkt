@@ -1,5 +1,7 @@
 #lang racket/base
-(require subtemplate/private/ddd-forms
+(require racket/require
+         subtemplate/private/ddd-forms
+         (subtract-in racket/syntax stxparse-info/case)
          stxparse-info/case
          stxparse-info/parse
          subtemplate/private/unsyntax-preparse
@@ -16,6 +18,8 @@
 (provide
  ;; ddd-forms
  ?@ ?@@ ?? ?attr ?cond ?if begin let #%app #%intdef-begin
+ ;; racket/syntax ∖ stxparse-info/case
+ (all-from-out racket/syntax)
  ;; stxparse-info/case
  (all-from-out stxparse-info/case)
  ;; stxparse-info/parse
