@@ -7,7 +7,8 @@
                "srfi-lite-lib"
                "stxparse-info"
                "alexis-util"
-               "scope-operations"))
+               "scope-operations"
+               "auto-syntax-e"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "scribble-math"))

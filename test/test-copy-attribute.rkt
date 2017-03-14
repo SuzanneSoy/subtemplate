@@ -62,7 +62,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'([1 2 3] #:kw [4 5])
                    [({~and {~or #:kw (x …)}} …)
-                    (copy-raw-syntax-attribute y (attribute* x) 2 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 2 #f); has ~or
                     (template [(?? (?@ y …) empty) … ((?? (y …) empty) …)])]))
                 '(1 2 3 empty 4 5 ((1 2 3) empty (4 5))))
 
@@ -70,7 +70,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'([1 2 3] #:kw [4 5])
                    [({~and {~or #:kw (x …)}} … y)
-                    (copy-raw-syntax-attribute y (attribute* x) 2 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 2 #f); has ~or
                     (template [(?? (?@ y …) empty) … ((?? (y …) empty) …)])]))
                 '(1 2 3 empty ((1 2 3) empty)))
 
@@ -110,7 +110,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'([1 #:kw 3] [4 5])
                    [(({~and {~or #:kw x}} …) …)
-                    (copy-raw-syntax-attribute y (attribute* x) 2 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 2 #f); has ~or
                     (template [(?@ (?? y empty) …) … (((?? y empty) …) …)])]))
                 '(1 empty 3 4 5 ((1 empty 3) (4 5))))
 
@@ -118,7 +118,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'([1 #:kw 3] [4 5])
                    [(({~and {~or #:kw x}} …) … y)
-                    (copy-raw-syntax-attribute y (attribute* x) 2 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 2 #f); has ~or
                     (template [(?@ (?? y empty) …) … (((?? y empty) …) …)])]))
                 '(1 empty 3 ((1 empty 3))))
 
@@ -158,7 +158,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'(1 #:kw 3)
                    [({~and {~or #:kw x}} …)
-                    (copy-raw-syntax-attribute y (attribute* x) 1 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 1 #f); has ~or
                     (template ({?? y empty} …))]))
                 '(1 empty 3))
 
@@ -166,7 +166,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'(1 #:kw 3 4)
                    [({~and {~or #:kw x}} … y)
-                    (copy-raw-syntax-attribute y (attribute* x) 1 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 1 #f); has ~or
                     (template ({?? y empty} …))]))
                 '(1 empty 3))
 
@@ -266,7 +266,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'(#:kw)
                    [({~optional (x …)} #:kw)
-                    (copy-raw-syntax-attribute y (attribute* x) 1 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 1 #f); has ~opt
                     (template {?? (y …) empty})]))
                 'empty)
 
@@ -297,7 +297,7 @@
   (check-equal? (syntax->datum
                  (syntax-parse #'(#:kw)
                    [({~optional ((x …) …)} #:kw)
-                    (copy-raw-syntax-attribute y (attribute* x) 2 #t)
+                    (copy-raw-syntax-attribute y (attribute* x) 2 #f); has ~opt
                     (template {?? ((y …) …) empty})]))
                 'empty)
 

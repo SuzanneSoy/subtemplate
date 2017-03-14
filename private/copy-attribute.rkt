@@ -6,11 +6,16 @@
 (require stxparse-info/current-pvars
          phc-toolkit/untyped
          stxparse-info/parse
-         (for-syntax racket/contract
+         (for-syntax "optcontract.rkt";racket/contract
                      racket/syntax
                      phc-toolkit/untyped
                      racket/function
-                     stxparse-info/parse))
+                     stxparse-info/parse)
+
+
+
+         (only-in stxparse-info/parse/private/residual make-attribute-mapping)
+         (for-syntax (only-in auto-syntax-e/utils make-auto-pvar)))
 
 (begin-for-syntax
   (define/contract (nest-map f last n)
@@ -40,10 +45,6 @@
                val)
           #f)))
 
-;; manually creating the attribute with (make-attribute-mapping …)
-;; works, but the attribute behaves in a bogus way when put inside
-;; an (?@ yᵢ ...). I must be missing some step in the construction
-;; of the attribute
 (define-syntax/parse (copy-raw-syntax-attribute name:id
                                                 attr-value:expr
                                                 ellipsis-depth:nat
@@ -63,8 +64,16 @@
                                               extract-non-syntax}})
                           (syntax-e #'ellipsis-depth))
   (if (syntax-e #'syntax?)
-      #'(begin
-          (define/syntax-parse nested attr-value))
+      (with-syntax ([vtmp (generate-temporary #'name)]
+                    [stmp (generate-temporary #'name)])
+        #'(begin
+            (define vtmp attr-value);; TODO: if already an id, no need to copy it (unless the id is mutated)
+            (define-syntax stmp
+              (make-attribute-mapping (quote-syntax vtmp)
+                                      'name 'ellipsis-depth 'syntax?))
+            (define-syntax name
+              (make-auto-pvar 'ellipsis-depth (quote-syntax stmp)))))
+      ;; TODO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vvvvvvvvvvvvvvvvvvvvvvvvvv
       #'(begin
           (define-syntax-class extract-non-syntax
             #:attributes (name)

@@ -191,7 +191,7 @@
                (copy-raw-syntax-attribute bound
                                           (hash-ref #,lift-target 'token)
                                           ellipsis-depth
-                                          #t)
+                                          #f) ;; TODO: #t iff the original was #t
                …
                #,(if get-attribute*
                    #'(list (attribute* bound ) …)
@@ -374,7 +374,7 @@
        (copy-raw-syntax-attribute bound
                                   temp-cached
                                   ellipsis-depth
-                                  #t))))
+                                  #f)))) ;; TODO: #t iff the original was #t
 
 (define (check-derived-ellipsis-shape ellipsis-depth
                                       temp-generated
