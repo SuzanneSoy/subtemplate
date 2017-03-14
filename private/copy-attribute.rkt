@@ -72,7 +72,8 @@
               (make-attribute-mapping (quote-syntax vtmp)
                                       'name 'ellipsis-depth 'syntax?))
             (define-syntax name
-              (make-auto-pvar 'ellipsis-depth (quote-syntax stmp)))))
+              (make-auto-pvar 'ellipsis-depth (quote-syntax stmp)))
+            (define-pvars name)))
       ;; TODO ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ vvvvvvvvvvvvvvvvvvvvvvvvvv
       #'(begin
           (define-syntax-class extract-non-syntax
