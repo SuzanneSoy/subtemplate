@@ -4,7 +4,7 @@
          racket/list
          racket/string
          racket/function
-         racket/contract
+         "optcontract.rkt";racket/contract
          phc-toolkit/untyped
          phc-toolkit/untyped-only/syntax-parse
          racket/stxparam
@@ -32,7 +32,8 @@
                      srfi/13
                      (subtract-in racket/string srfi/13)
                      syntax/contract
-                     racket/contract))
+                     "optcontract.rkt";racket/contract
+                     ))
 
 (provide subtemplate
          quasisubtemplate

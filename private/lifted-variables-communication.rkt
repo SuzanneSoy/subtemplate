@@ -8,7 +8,8 @@
 (require racket/stxparam
          (for-syntax racket/base
                      racket/syntax
-                     racket/contract))
+                     "optcontract.rkt";racket/contract
+                     ))
 
 (define-syntax-parameter lift-late-pvars-param #f)
 

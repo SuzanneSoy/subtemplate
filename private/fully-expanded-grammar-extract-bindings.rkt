@@ -4,7 +4,7 @@
 
 (require syntax/parse
          phc-toolkit/untyped
-         racket/contract
+         "optcontract.rkt";racket/contract
          racket/list
          (for-template '#%kernel))
 

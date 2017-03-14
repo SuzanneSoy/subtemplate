@@ -9,7 +9,7 @@
          (prefix-in - syntax/parse/private/residual)
          racket/stxparam
          "lifted-variables-communication.rkt"
-         (for-syntax racket/contract
+         (for-syntax "optcontract.rkt";racket/contract
                      racket/syntax
                      phc-toolkit/untyped
                      racket/function
@@ -256,6 +256,7 @@
 ;;; pvar outside of the body.
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …) (current-pvars-shadowers))
+  (displayln (stx-map syntax-e (current-pvars-shadowers)))
   
   (define-temp-ids "~aᵢ" (pvar …))
   (define/with-syntax f

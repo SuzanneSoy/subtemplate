@@ -118,13 +118,19 @@
            {~not (_ _ {~literal …} . _)}} ;; not fn directly followed by a …
      ;#'(#%app apply fn (#%app append arg.expanded …))
      (syntax/top-loc this-syntax
-       (#%app apply fn (#%app splice-append arg.expanded … #:rest rest.v)))]
+       (#%plain-app apply fn (#%plain-app splice-append-nokw rest.v arg.expanded …)))]
     [(_ arg:arg … . rest:not-stx-pair) ;; shorthand for list creation
      ;#'(#%app apply list (#%app append arg.expanded …))
+     #;(syntax/top-loc this-syntax
+         (#%plain-app apply list
+                      (#%plain-app splice-append-nokw rest.v arg.expanded …)))
+     ;; (apply list v) is a no-op asside from error handling.
      (syntax/top-loc this-syntax
-       (#%app apply list (#%app splice-append arg.expanded … #:rest rest.v)))]))
+       (#%plain-app splice-append-nokw rest.v arg.expanded …))]))
 
 (define (splice-append #:rest [rest '()] . l*)
+  (splice-append* (if (null? rest) l* (append l* rest))))
+(define (splice-append-nokw rest . l*)
   (splice-append* (if (null? rest) l* (append l* rest))))
 (define (splice-append* l*)
   (cond
