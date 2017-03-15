@@ -242,7 +242,7 @@
 
 (define formattable/c (or/c number? string? symbol? bytes?))
 
-(define/contract
+(define/contract/always
   (generate-nested-ids depth bound binder₀ format l* attribute-names whole-form)
   (->i {[depth exact-nonnegative-integer?]
         [bound identifier?]

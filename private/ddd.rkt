@@ -256,7 +256,6 @@
 ;;; pvar outside of the body.
 (define-syntax/case (ddd body) ()
   (define/with-syntax (pvar …) (current-pvars-shadowers))
-  (displayln (stx-map syntax-e (current-pvars-shadowers)))
   
   (define-temp-ids "~aᵢ" (pvar …))
   (define/with-syntax f
