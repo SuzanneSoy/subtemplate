@@ -10,7 +10,7 @@
          racket/function
          racket/list
          phc-toolkit/untyped
-         "optcontract.rkt";racket/contract
+         "optcontract.rkt"
          racket/string
          racket/syntax)
 

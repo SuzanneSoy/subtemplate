@@ -9,7 +9,7 @@
          (prefix-in - syntax/parse/private/residual)
          racket/stxparam
          "lifted-variables-communication.rkt"
-         (for-syntax "optcontract.rkt";racket/contract
+         (for-syntax "optcontract.rkt"
                      racket/syntax
                      phc-toolkit/untyped
                      racket/function

@@ -6,7 +6,7 @@
 (require stxparse-info/current-pvars
          phc-toolkit/untyped
          stxparse-info/parse
-         (for-syntax "optcontract.rkt";racket/contract
+         (for-syntax "optcontract.rkt"
                      racket/syntax
                      phc-toolkit/untyped
                      racket/function
