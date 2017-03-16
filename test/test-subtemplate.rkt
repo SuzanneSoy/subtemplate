@@ -357,7 +357,27 @@
                  (syntax-case #'([a b c] [d]) ()
                    [([xᵢ …] [pᵢ …])
                     (quasisubtemplate ([xᵢ …] [pᵢ …]))]))
-                '([a b c] [d])))
+                '([a b c] [d]))
+
+  (require (submod "../private/template-subscripts.rkt" test-private))
+  (check-exn #rx"incompatible ellipsis match counts for subscripted variables"
+             (λ ()
+               (generate-nested-ids 1
+                                    #'a
+                                    #'b
+                                    (λ (x) "fmt")
+                                    '((foo bar) (baz))
+                                    (list #'x #'y)
+                                    #'(whole))))
+  (check-equal? (map syntax-e
+                     (generate-nested-ids 1
+                                          #'a
+                                          #'b
+                                          (λ (x) "fmt")
+                                          '((foo bar) (baz quux))
+                                          (list #'x #'y)
+                                          #'(whole)))
+                '(fmt fmt)))
 
 (syntax-parse (syntax-parse #'(a b c)
                 [(xᵢ …)

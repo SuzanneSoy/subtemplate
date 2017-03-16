@@ -241,8 +241,23 @@
 
 (define formattable/c (or/c number? string? symbol? bytes?))
 
-(define/contract/always
-  (generate-nested-ids depth bound binder₀ format l* attribute-names whole-form)
+(define (generate-nested-ids-check-ellipsis-match-count
+         l* depth attribute-names whole-form bound)
+  (if ((ellipsis-count/c depth) l*)
+      #t
+      (raise-syntax-error
+       (syntax-case whole-form ()
+         [(self . _) (syntax-e #'self)]
+         [_ 'subtemplate])
+       "incompatible ellipsis match counts for subscripted variables:"
+       whole-form
+       bound
+       attribute-names)))
+
+(module+ test-private
+  (provide generate-nested-ids))
+
+(define generate-nested-ids-full-contract
   (->i {[depth exact-nonnegative-integer?]
         [bound identifier?]
         [binder₀ identifier?]
@@ -252,21 +267,17 @@
                                      (λ (a) (= (length l*) (length a))))]
         [whole-form syntax?]}
        #:pre (l* depth attribute-names whole-form bound)
-       (if ((ellipsis-count/c depth) l*)
-           #t
-           (raise-syntax-error
-            (syntax-case whole-form ()
-              [(self . _) (syntax-e #'self)]
-              [_ 'subtemplate])
-            "incompatible ellipsis match counts for subscripted variables:"
-            whole-form
-            bound
-            attribute-names))
+       (generate-nested-ids-check-ellipsis-match-count
+        l* depth attribute-names whole-form bound)
        {result (depth l*)
                (and/c (attribute-val/c depth identifier?)
-                      (λ (r) ((ellipsis-count/c depth) (cons r l*))))})
+                      (λ (r) ((ellipsis-count/c depth) (cons r l*))))}))
 
-  
+(define/contract/alt
+  (generate-nested-ids depth bound binder₀ format l* attribute-names whole-form)
+  generate-nested-ids-full-contract
+  (generate-nested-ids-check-ellipsis-match-count
+   l* depth attribute-names whole-form bound)
   (define (gen bottom*)
     (define v
       (let ([vs (filter-map (λ (v)
