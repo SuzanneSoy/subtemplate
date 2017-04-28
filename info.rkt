@@ -14,5 +14,5 @@
                      "scribble-math"))
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
 (define pkg-desc "Various enhancements on syntax templates")
-(define version "1.0")
+(define version "1.1")
 (define pkg-authors '("Georges Dupéron"))
