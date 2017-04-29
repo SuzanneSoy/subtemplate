@@ -77,14 +77,16 @@
   ;; grep for valvars in expanded-body
   (define/with-syntax present-variables
     (for/vector ([x-vv (in-syntax #'(real-valvar …))]
-                 [pv (in-syntax #'(pvar …))])
+                 [pv (in-syntax #'(pvar …))]) ;; TODO: is this line used (I suspect both lists have the same length)?
       (if (free-id-set-member? expanded-ids-set x-vv)
           #t
           #f)))
   
   #`(let-values ()
       (quote-syntax #,(x-pvar-present-marker #'present-variables))
-      body)) ;;;;;;;;;;;;;;;;;;;;;; expanded-body
+      ;; was "body", instead of "expanded-body". I think that was just a remnant
+      ;; of a debugging session, so I changed it to "expanded-body".
+      expanded-body))
 
 (define (=* . vs)
   (if (< (length vs) 2)
@@ -233,6 +235,9 @@
          (datum->syntax stx `(,#'self ,#'a ,else) stx stx))]))
   (parse stx))
 
+(begin-for-syntax
+  (struct presence-info (depth>0? pvar iterated-pvar present? depth) #:prefab))
+
 ;;; The body is wrapped in a lambda, with one pvarᵢ for each pvar within scope.
 ;;; This is used to shadow the pvar with one equal to pvarᵢ, which iterates over
 ;;; the original pvar. Inside that function, the body is wrapped with
@@ -290,12 +295,12 @@
             (match (attribute-info pv '(pvar attr))
               [(list* _ _valvar depth _)
                (if (> depth 0)
-                   (list #t pv pvᵢ #t depth)
-                   (list #f pv pvᵢ #t depth))]) ;; TODO: detect shadowed bindings, if the pvar was already iterated on, raise an error (we went too deep).
-            (list #f pv pvᵢ #f #f))))
+                   (presence-info #t pv pvᵢ #t depth)
+                   (presence-info #f pv pvᵢ #t depth))]) ;; TODO: detect shadowed bindings, if the pvar was already iterated on, raise an error (we went too deep).
+            (presence-info #f pv pvᵢ #f #f))))
     ;; Pvars which are iterated over
-    (define/with-syntax ((_ iterated-pvar iterated-pvarᵢ _ _) …)
-      (filter car present?+pvars))
+    (define/with-syntax (#s(presence-info _ iterated-pvar iterated-pvarᵢ _ _) …)
+      (filter presence-info-depth>0? present?+pvars))
 
     (when (and (stx-null? #'(iterated-pvar …))
                (null? lifted-variables))
@@ -304,9 +309,9 @@
     ;; If the pvar is iterated, use the iterated pvarᵢ 
     ;; otherwise use the original (attribute* pvar)
     (define/with-syntax (filling-pvar …)
-      (map (match-λ [(list #t pv pvᵢ #t _) pvᵢ]
-                    [(list #f pv pvᵢ #t _) #`(attribute* #,pv)]
-                    [(list #f pv pvᵢ #f _) #'#f])
+      (map (match-λ [(presence-info #t pv pvᵢ #t _) pvᵢ]
+                    [(presence-info #f pv pvᵢ #t _) #`(attribute* #,pv)]
+                    [(presence-info #f pv pvᵢ #f _) #'#f])
            present?+pvars)))
 
   #'(map#f* (λ (iterated-pvarᵢ … lifted-key …)
@@ -371,7 +376,7 @@
     (string-join
      (map (λ (present?+pvar)
             (format "~a at depth ~a"
-                    (syntax-e (second present?+pvar))
-                    (fifth present?+pvar)))
-          (filter fourth present?+pvars))
+                    (syntax-e (presence-info-pvar present?+pvar))
+                    (presence-info-depth present?+pvar)))
+          (filter presence-info-present? present?+pvars))
      "\n   "))))
