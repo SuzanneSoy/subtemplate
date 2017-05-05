@@ -1,5 +1,9 @@
 #lang racket
 
+;; Implementation of the (ddd e) macro, which iterates e over the syntax pattern
+;; variables present in e. e should contain at least one syntax pattern variable
+;; which is under ellipses.
+
 (provide ddd ?? ?if ?cond ?attr ?@ ?@@
          splicing-list splicing-list-l splicing-list?)
 
@@ -93,17 +97,43 @@
       #t
       (apply = vs)))
 
-(define (map#f* f attr-ids l*)
-  (for ([l (in-list l*)]
-        [attr-id (in-list attr-ids)])
-    (when (eq? l #f)
-      (raise-syntax-error (syntax-e attr-id)
-                          "attribute contains an omitted element"
-                          attr-id)))
-  (unless (apply =* (map length l*))
-    (raise-syntax-error 'ddd
-                        "incompatible ellipis counts for template"))
-  (apply map f l*))
+;; map, with extra checks for missing elements (i.e. when one of the l* lists
+;; is #f). If allow-missing? is specified, each #f list is replaced by
+;; a stream of #f values. If all l* lists are #f, then there is no way to know
+;; the number of iterations to make, so #f is returned (indicating that the
+;; whole sequence is missing, instead of being merely empty.
+(define (map#f* allow-missing? f attr-ids l*)
+  (if allow-missing?
+      (let ()
+        (define non-#f-l* (filter identity l*))
+        (unless (apply =* (map length non-#f-l*))
+          (raise-syntax-error 'ddd
+                              "incompatible ellipis counts for template"))
+        (if (= (length non-#f-l*) 0)
+            ;; If all lists are missing (#f), return a single #f value, indicating
+            ;; that there are no elements to create the result list from.
+            #f
+            ;; Or should we use this?
+            ;(apply f (map (const #f) l*))
+            ;; i.e. just call the function once with every variable bound to #f,
+            ;; i.e. missing.
+          
+            ;; replace the missing (#f) lists with a list of N #f values, where N
+            ;; is the length of the other lists.
+            (let* ([repeated-#f (map (const #f) (car non-#f-l*))]
+                   [l*/repeated-#f (map (λ (l) (or l repeated-#f)) l*)])
+              (apply map f l*/repeated-#f))))
+      (let ()
+        (for ([l (in-list l*)]
+              [attr-id (in-list attr-ids)])
+          (when (eq? l #f)
+            (raise-syntax-error (syntax-e attr-id)
+                                "attribute contains an omitted element"
+                                attr-id)))
+        (unless (apply =* (map length l*))
+          (raise-syntax-error 'ddd
+                              "incompatible ellipis counts for template"))
+        (apply map f l*))))
 
 
 (define-for-syntax (current-pvars-shadowers)
@@ -259,7 +289,9 @@
 ;;; extract-present-variables can find it.
 ;;; In effect, this is semantically equivalent to lifting the problematic
 ;;; pvar outside of the body.
-(define-syntax/case (ddd body) ()
+(define-syntax/case (ddd body . tail) ()
+  (define/with-syntax allow-missing?
+    (syntax-case #'tail () [() #'#f] [(#:allow-missing) #'#t]))
   (define/with-syntax (pvar …) (current-pvars-shadowers))
   
   (define-temp-ids "~aᵢ" (pvar …))
@@ -314,7 +346,8 @@
                     [(presence-info #f pv pvᵢ #f _) #'#f])
            present?+pvars)))
 
-  #'(map#f* (λ (iterated-pvarᵢ … lifted-key …)
+  #'(map#f* allow-missing?
+            (λ (iterated-pvarᵢ … lifted-key …)
               (expanded-f filling-pvar …
                           (make-hash (list (cons 'lifted-key lifted-key) …))))
             (list (quote-syntax iterated-pvar) …

@@ -20,10 +20,20 @@
          stxparse-info/case
          stxparse-info/parse
          phc-toolkit/untyped
+         subtemplate/private/copy-attribute
+         (for-meta -2 subtemplate/private/syntax-case-as-syntax-parse)
+         (for-meta -1 subtemplate/private/syntax-case-as-syntax-parse)
+         (for-meta 0 subtemplate/private/syntax-case-as-syntax-parse)
+         (for-meta 1 subtemplate/private/syntax-case-as-syntax-parse)
+         (for-meta 2 subtemplate/private/syntax-case-as-syntax-parse)
+         (for-meta 3 subtemplate/private/syntax-case-as-syntax-parse)
          (prefix-in - (only-in racket/base
                                begin let lambda define))
          (prefix-in - (only-in stxparse-info/case
                                define/with-syntax))
+         (prefix-in - (only-in stxparse-info/parse
+                               define/syntax-parse
+                               syntax-parse))
          (for-syntax racket/base
                      racket/list
                      stxparse-info/parse
@@ -34,20 +44,24 @@
          (for-meta 2 stxparse-info/parse))
 
 (begin-for-syntax
-  (define (-nest* before after -v -ooo* [depth 0])
+  (define (-nest* wrapper -v -ooo* [depth 0])
     (if (stx-null? -ooo*)
         -v
-        (-nest* before
-                after
-                #`(#,@(syntax->list before) #,-v . #,after)
+        (-nest* wrapper
+                (wrapper -v)
                 (stx-cdr -ooo*)
                 (add1 depth))))
   
   (define-syntax nest*
     (syntax-parser
-      [(self (before … {~datum %} . after) v ooo*)
-       (with-syntax ([s (datum->syntax #'self 'syntax)])
-         #'(-nest* (s ((… …) (before …))) (s ((… …) after)) (s v) (s ooo*)))]))
+      [(self wrapper-stx v ooo*)
+       (with-syntax ([s (datum->syntax #'self 'syntax)]
+                     [qs (datum->syntax #'self 'quasisyntax)])
+         #`(-nest* (λ (new-v)
+                     (with-syntax ([#,(datum->syntax #'self '%) new-v])
+                       (qs wrapper-stx)))
+                   (s v)
+                   (s ooo*)))]))
 
   (define-syntax ddd*
     (syntax-parser
@@ -79,15 +93,22 @@
     (pattern (:not-macro-id . _)))
   
   (define-splicing-syntax-class stmt
-    #:literals (define define/with-syntax)
+    #:literals (define define/with-syntax -define/syntax-parse)
     (pattern {~seq (define name:id e:expr) :ooo+}
              #:with expanded
              #`(-define name
                         #,(nest* (ddd %) e ooo*)))
     (pattern {~seq (define/with-syntax pat e:expr) :ooo+}
              #:with expanded
-             #`(-define/with-syntax #,(nest* (% …) pat ooo*)
-                                    #,(nest* (ddd %) e ooo*)))
+             #`(-define/syntax-parse
+                #,(nest* (… {~and {~or (% …) #f}}) ({~syntax-case pat}) ooo*)
+                #,(nest* (ddd % #:allow-missing) (list e) ooo*)))
+    (pattern {~seq (-define/syntax-parse pat e:expr) :ooo+}
+             ;; Same as above, except that pat is not wrapped with ~syntax-case.
+             #:with expanded
+             #`(-define/syntax-parse
+                #,(nest* (… {~and {~or (% …) #f}}) (pat) ooo*)
+                #,(nest* (ddd % #:allow-missing) (list e) ooo*)))
     (pattern {~seq e :ooo+}
              ;#:with expanded #`(apply values #,(ddd* e ooo*))
              #:with expanded #`(splicing-list #,(ddd* e ooo*)))

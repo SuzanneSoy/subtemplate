@@ -96,15 +96,15 @@ with @racketmodname[syntax/parse] and @|orig:syntax-case|.
      @${m - 1} levels in the result list). It is also possible to nest the use
      of these ellipses, e.g. with @racket[(x ...) ...], which keeps the
      structure of the nested lists in the result.}
- @item{When a definition form (@racket[define] or @racket[define/with-syntax]
-     for now) is followed by @${n} ellipses, then the defined identifier is a
-     @${\text{nested}^n} list, or a syntax pattern variable with an ellipsis
-     depth of @${n}. The expression is evaluated for each value of the template
-     variables it contains. Note that the structure of the nested lists is not
-     flattened, despite the fact that the ellipses are written one after
-     another. This is because it is usually the desired outcome, and nesting
-     parentheses around the definition form would produce rather unreadable
-     code.}
+ @item{When a definition form (@racket[define], @racket[define/with-syntax] or
+     @racket[define/syntax-parse] for now) is followed by @${n} ellipses, then
+     the defined identifier is a @${\text{nested}^n} list, or a syntax pattern
+     variable with an ellipsis depth of @${n}. The expression is evaluated for
+     each value of the template variables it contains. Note that the structure
+     of the nested lists is not flattened, despite the fact that the ellipses
+     are written one after another. This is because it is usually the desired
+     outcome, and nesting parentheses around the definition form would produce
+     rather unreadable code.}
  @item{These ellipses can also be used ``inline'' within function calls
      (@racketmodname[subtemplate] overrides @racket[#%app] to achieve this). For
      example: @racket[(/ (+ x ...) (length x))] would compute the average of
@@ -250,10 +250,17 @@ to their equivalents from this library, and without @orig:template/loc] and
 
 @defform[(begin body ...)]{
  Overridden version of @|orig:begin|. Supports ellipses after definitions
- (using @racket[define] and @racket[define-syntax]). Supports ellipses after
- expressions, in which case the results are grouped into a splicing list, which
- makes it possible to write @racket[(+ (begin x ...))] and obtain the same
- result as with @racket[(+ x ...)].}
+ (using @racket[define], @racket[define/with-syntax] or
+ @racket[define/syntax-parse]). Supports ellipses after expressions, in which
+ case the results are grouped into a splicing list, which makes it possible to
+ write @racket[(+ (begin x ...))] and obtain the same result as with
+ @racket[(+ x ...)].
+
+ @history[
+ #:changed "1.2"
+ @elem{Added support @racket[define/syntax-parse], fixed documentation which
+   incorrectly claimed support for @racket[define-syntax] instead of
+   @racket[define/with-syntax]}]}
 
 @defform*[[(let ([var val] …) . body)
            (let name ([var val] …) . body)]]{
