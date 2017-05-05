@@ -1,6 +1,6 @@
 #lang racket/base
 (provide ~syntax-case ~syntax-case-stat)
-(require syntax/parse
+(require stxparse-info/parse
          (for-syntax racket/base))
 (define-for-syntax (~syntax-case-impl not-stat? stx)
   (with-syntax ([(_ stx1) stx])
@@ -22,7 +22,7 @@
         [()
          stx2]))
     (syntax-case #'stx1 ()
-      [underscore (and (id=? #'underscore #'_) not-stat?)
+      [underscore (id=? #'underscore #'_)
                   #'underscore]
       [id (identifier? #'id)
           (ds `{,{ds2 '~var #'id} ,#'id})]
@@ -49,17 +49,7 @@
       [other
        (ds `{,(ds2 '~datum #'other) ,#'other})])))
 
-#;(syntax-case (quote-syntax #s(a b c d)) ()
-    [#s(a ... bb) #'bb]
-    [(... #s(a ... b)) 'y])
-
 (define-syntax ~syntax-case
   (pattern-expander (λ (stx) (~syntax-case-impl #t stx))))
 (define-syntax ~syntax-case-stat
   (pattern-expander (λ (stx) (~syntax-case-impl #f stx))))
-
-#;(syntax-parse #'(1 2 3)
-    [{~syntax-case (~var ... ~and)}
-     (displayln (attribute ~var))
-     (displayln (attribute ~and))
-     ])
