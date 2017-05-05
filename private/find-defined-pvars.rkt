@@ -11,6 +11,8 @@
 (require stxparse-info/current-pvars
          (for-syntax racket/list))
 
+(define result #f)
+
 (define-syntax (continue stx)
   (syntax-case stx ()
     [(_ old-pvars-stx)
@@ -26,13 +28,11 @@
                          " Before: ~a\n"
                          " After: ~a\n"
                          " New items: ~a"
-          old-pvars
-          rest-pvars
-          new-pvars)))
-       
-       (displayln old-pvars)
-       (displayln new-pvars)
-       #'(begin))]))
+                         old-pvars
+                         rest-pvars
+                         new-pvars)))
+       ;; Return the result for tests:
+       #`(set! result '#,new-pvars))]))
 
 (define-syntax (find-defined-pvars stx)
   (syntax-case stx ()
@@ -44,3 +44,7 @@
 (define/with-syntax (a . b) #'(1 2))
 (find-defined-pvars (x . y) #'(3 4))
 (define/with-syntax (c . d) #'(5 6))
+
+(module+ test
+  (require rackunit)
+  (check-equal? result '(y x)))
