@@ -47,7 +47,9 @@ by your macro.
      [(_ vᵢ …)
       #'(let ([tempᵢ vᵢ] …)
           (unless (integer? tempᵢ)
-            (printf "Warning: ~a should be an integer, got ~a.\n" 'vᵢ tempᵢ))
+            (printf "Warning: ~a should be an integer, got ~a.\n"
+                    'vᵢ
+                    tempᵢ))
           …
           (+ tempᵢ …))]))
  (sum 1 2 3)
