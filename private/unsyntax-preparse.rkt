@@ -24,6 +24,12 @@
 
 (define-for-syntax lifted (make-parameter #f))
 
+(begin-for-syntax
+  (define-syntax-class qq
+    (pattern {~or {~literal stxparse:??} {~literal ??}}))
+  (define-syntax-class qa
+    (pattern {~or {~literal stxparse:?@} {~literal ?@}})))
+
 (define-for-syntax (pre-parse-unsyntax tmpl depth escapes quasi? form)
   ;; TODO: a nested quasisubtemplate should escape an unsyntax!
   (define (ds e)
@@ -37,7 +43,7 @@
   (define (lift! e) (set-box! (lifted) (cons e (unbox (lifted)))))
   (syntax-parse tmpl
     #:literals (unsyntax unsyntax-splicing unquote unquote-splicing
-                         quasitemplate ?? ?if ?cond ?attr ?@ ?@@)
+                         quasitemplate ?if ?cond ?attr ?@@)
     [({~and u unsyntax} (unquote e))
      #:when (and (= escapes 0) quasi?)
      ;; full unsyntax with #,,e
@@ -105,18 +111,18 @@
      (recur (ds `(,#'?if ,#'condition
                          ,(ds `(,#'?@ . ,#'v))
                          ,(ds `(,#'self . ,#'rest)))))]
-    [({~and self ?cond} [{~literal else}] . rest)
-     ;; ?cond meta-operator, when the first case has the shape [else]
+    [({~and self ?cond} [{~literal else}])
+     ;; ?cond meta-operator, when the only case has the shape [else]
      #'(stxparse:?@)]
     [({~and self ?cond} [{~literal else} . v] . rest)
      ;; ?cond meta-operator, when the first case has the shape [else . v]
-     (recur #'(?@ . v))]
+     (recur (ds `(,#'?@ . ,#'v)))]
     [({~and self ?@@} . e)
      ;; Special handling for the special (?@@ . e) meta-operator
      (with-syntax ([tmp (generate-temporary #'self)]
                    [ooo* (map (λ (_) (quote-syntax …)) (range depth))])
        (lift! #`(begin (define/with-syntax tmp
-                         (append* (stx-map*syntax->list #,(form #'e))))
+                         (append* (stx-map*syntax->list #,(form (recur #'e)))))
                        . ooo*))
        #'(stxparse:?@ . tmp))]
     [({~and self ?attr} condition)
@@ -127,17 +133,17 @@
     [(:ooo t)
      ;; Ellipsis used to escape part of a template, i.e. (... escaped)
      tmpl] ;; tmpl is fully escaped: do not change anything, pass the ... along
-    [({~and self ??} a b c . rest)
+    [(self:qq a b c . rest)
      ;; Extended ?? from syntax/parse with three or more cases
      (ds `(,#'stxparse:?? ,(recur #'a)
                           ,(recur (ds `(,#'self ,#'b ,#'c . ,#'rest)))))]
-    [(?? a b)
+    [(:qq a b)
      ;; ?? from syntax/parse with two cases
      (ds `(,#'stxparse:?? ,(recur #'a) ,(recur #'b)))]
-    [(?? a)
+    [(:qq a)
      ;; ?? from syntax/parse with a single case (implicit (?@) as the else case)
      (ds `(,#'stxparse:?? ,(recur #'a)))]
-    [(?@ . args)
+    [(:qa . args)
      ;; ?@ from syntax/parse
      (ds `(,#'stxparse:?@ . ,(recur #'args)))]
     [({~var mf (static template-metafunction? "template metafunction")} . args)

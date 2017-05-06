@@ -2,31 +2,10 @@
 @require[racket/require
          scriblib/footnote
          scribble-math
+         "orig.rkt"
          @for-label[subtemplate
                     (only-in syntax/parse/experimental/template)
                     (subtract-in racket/base subtemplate)]]
-
-@(begin
-   (module m racket/base
-     (require scribble/manual
-              (for-template syntax/parse
-                            syntax/parse/experimental/template
-                            racket/syntax)
-              (for-syntax racket/base
-                          racket/syntax))
-     (define-syntax (mk stx)
-       (syntax-case stx ()
-         [(_ id)
-          (with-syntax ([orig: (format-id #'id "orig:~a" #'id)])
-            #'(begin
-                (define orig: @racket[id])
-                (provide orig:)))]))
-     (define-syntax-rule (mk* id ...) (begin (mk id) ...))
-     
-     (mk* syntax-parse syntax-case with-syntax template quasitemplate syntax
-          unsyntax quasisyntax ?? ?@ template/loc quasitemplate/loc #%app
-          #%top begin let))
-   (require 'm))
 
 @title[#:style (with-html5 manual-doc-style)]{Subtemplate}
 @author[@author+email["Georges Dupéron" "georges.duperon@gmail.com"]]
@@ -47,6 +26,8 @@ these are likely to cause problems in your code.
 
 Finally, If the maintenance burden is too high, I might drop the compatibility
 with @racketmodname[syntax/parse] and @|orig:syntax-case|.
+
+@include-section{examples.scrbl}
 
 @section{The main @racketmodname[subtemplate] module}
 
@@ -166,25 +147,36 @@ to their equivalents from this library, and without @orig:template/loc] and
 
 @subsection{New and overridden bindings provided by @racketmodname[subtemplate]}
 
-@defform*[{(subtemplate template)
-           (subtemplate template #:properties (prop ...))}
+@defform*[{(subtemplate tmpl)
+           (subtemplate tmpl #:properties (prop ...))}
           #:contracts
           ([prop identifier?])]{
- Like @racket[template], but automatically derives identifiers for any
- @racket[yᵢ …] which is not bound as a syntax pattern variable, based on a
- corresponding @racket[xᵢ …] which is bound as a syntax pattern variable.}
+                                
+ Like @orig:template from @racketmodname[syntax/parse/experimental/template],
+ but automatically derives identifiers for any @racket[yᵢ …] which is not bound
+ as a syntax pattern variable, based on a corresponding @racket[xᵢ …] which is
+ bound as a syntax pattern variable. Additionally, @racket[subtemplate]
+ supports a number of features described in
+ @secref["The_main_subtemplate_module"
+         #:doc '(lib "subtemplate/scribblings/subtemplate.scrbl")],
+ which are not part of @racketmodname[syntax/parse/experimental/template]}
 
-@defform*[{(quasisubtemplate template)
-           (quasisubtemplate template #:properties (prop ...))}
+@defform*[{(quasisubtemplate tmpl)
+           (quasisubtemplate tmpl #:properties (prop ...))}
           #:contracts
           ([prop identifier?])]{
- Like @racket[quasitemplate], but automatically derives identifiers for any
- @racket[yᵢ …] which is not bound as a syntax pattern variable, based on a
- corresponding @racket[xᵢ …] which is bound as a syntax pattern variable, in
- the same way as @racket[subtemplate].}
+ Like @orig:quasitemplate from
+ @racketmodname[syntax/parse/experimental/template], but automatically derives
+ identifiers for any @racket[yᵢ …] which is not bound as a syntax pattern
+ variable, based on a corresponding @racket[xᵢ …] which is bound as a syntax
+ pattern variable, in the same way as @racket[subtemplate]. Additionally,
+ @racket[quasisubtemplate] supports a number of features described in
+ @secref["The_main_subtemplate_module"
+         #:doc '(lib "subtemplate/scribblings/subtemplate.scrbl")],
+ which are not part of @racketmodname[syntax/parse/experimental/template]}
 
-@defform*[{(template _template)
-          (template _template #:properties (prop ...))}
+@defform*[{(template tmpl)
+          (template tmpl #:properties (prop ...))}
          #:contracts
          ([prop identifier?])]{
                                 
@@ -193,8 +185,8 @@ to their equivalents from this library, and without @orig:template/loc] and
  (ellipsis-preserving escapes with @racket[unsyntax], support for @racket[?@@],
  @racket[?attr], @racket[?cond] and @racket[?if]).}
 
-@defform*[{(quasitemplate template)
-          (quasitemplate template #:properties (prop ...))}
+@defform*[{(quasitemplate tmpl)
+          (quasitemplate tmpl #:properties (prop ...))}
          #:contracts
          ([prop identifier?])]{
                                 
@@ -221,10 +213,12 @@ to their equivalents from this library, and without @orig:template/loc] and
 
  Also works in @racket[template], @racket[subtemplate] and their derivatives.}
 @defform*[[(?? alt)
-           (?? alt else)]]{
+           (?? alt ...+ else)]]{
  Executes @racket[alt], if none of the template variables within is omitted
  (i.e. bound to @racket[#false] for the current ellipsis iteration). Otherwise,
- executes @racket[else]. If @racket[else] is omitted, it defaults to
+ the next @racket[alt] is considered. If every @racket[alt] contains omitted
+ template variables, then @racket[else] is excuted. If only one @racket[alt] is
+ specified, without an @racket[else], then @racket[else] defaults to
  @racket[(?@)], i.e. the empty splice.
 
  Also works in @racket[template], @racket[subtemplate] and their derivatives.}
