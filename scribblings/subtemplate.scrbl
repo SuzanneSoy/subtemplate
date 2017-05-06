@@ -112,11 +112,12 @@ with @racketmodname[syntax/parse] and @|orig:syntax-case|.
    @RACKET[(subtemplate (#,(+ x 1) ...))], for example.
 
    The usual behaviour, which resets the ellipsis count to 0, can be obtained
-   with @RACKET[#,,expr] (that is, @RACKET[(unsyntax (unquote expr))]) for an
-   @racket[unsyntax]-like escape. An @racket[unsyntax-splicing]-style escape
-   can be obtained with @RACKET[#,,@expr] or @RACKET[#,@,expr] (that is,
-   @RACKET[(unsyntax (unquote-splicing expr))] or
-   @RACKET[(unsyntax-splicing (unquote expr))]).}
+   with @RACKET[#,,expr] (that is,
+   @racket[(#,(racket unsyntax) (#,(racket unquote) expr))]) for an
+   @racket[unsyntax]-like escape. An @racket[unsyntax-splicing]-style escape can
+   be obtained with @RACKET[#,,@expr] or @RACKET[#,@,expr] (that is,
+   @racket[(#,(racket unsyntax) (#,(racket unquote-splicing) expr))] or
+   @racket[(#,(racket unsyntax-splicing) (#,(racket unquote) expr))]).}
  @item{Several utilities in the spirit of @racket[??] and @racket[?@] are
    provided, namely @racket[?@@], @racket[?attr] @racket[?cond] and
    @racket[?if].}
