@@ -8,7 +8,8 @@
                "stxparse-info"
                "alexis-util"
                "scope-operations"
-               "auto-syntax-e"))
+               "auto-syntax-e"
+               "version-case"))
 (define build-deps '("scribble-lib"
                      "racket-doc"
                      "scribble-math"))
