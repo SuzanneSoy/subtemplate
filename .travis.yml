@@ -24,7 +24,7 @@ install:
 - raco pkg install --deps search-auto -j 2
 
 script:
-- raco test -x -p "$(basename "$TRAVIS_BUILD_DIR")"
+- raco test -r -p "$(basename "$TRAVIS_BUILD_DIR")"
 - raco setup --check-pkg-deps --no-zo --no-launcher --no-install --no-post-install --no-docs --pkgs "$(basename "$TRAVIS_BUILD_DIR")"
 - raco doc-coverage subtemplate/light
 - raco cover -s main -s test -s doc -f codecov -f html -d ~/coverage . || true
