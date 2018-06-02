@@ -15,12 +15,20 @@
          stxparse-info/case
          syntax/stx
          racket/list
+         version-case
          (for-syntax racket/base
                      racket/list
                      racket/syntax
                      stxparse-info/parse
                      (only-in racket/base [... …])
                      phc-toolkit/untyped))
+
+(version-case
+ [(version< (version) "6.90.0.24")
+  (begin)]
+ [else
+  (require (only-in racket/private/template
+                    [metafunction? template-metafunction?]))])
 
 (define-for-syntax lifted (make-parameter #f))
 
