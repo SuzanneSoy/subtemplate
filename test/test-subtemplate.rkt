@@ -888,7 +888,7 @@
     ;; sublist of wᵢ element is missing, so it does not really have a meaningful
     ;; length for the ...
     (check-exn
-     #rx"attribute contains non-syntax value.*#f"
+     #rx"attribute contains non-(syntax|list) value.*#f"
      (λ ()
        (convert-compile-time-error
         (check-equal? (syntax->datum
@@ -944,7 +944,7 @@
     ;; sublist of wᵢ element is missing, so it does not really have a meaningful
     ;; length for the ...
     (check-exn
-     #rx"attribute contains non-syntax value.*#f"
+     #rx"attribute contains non-(syntax|list) value.*#f"
      (λ ()
        (convert-compile-time-error
         (check-equal? (syntax->datum
@@ -965,7 +965,7 @@
     ;; sublist of wᵢ element is missing, so it does not really have a meaningful
     ;; length for the ...
     (check-exn
-     #rx"attribute contains non-syntax value.*#f"
+     #rx"attribute contains non-(syntax|list) value.*#f"
      (λ ()
        (convert-compile-time-error
         (check-equal? (syntax->datum
@@ -985,7 +985,7 @@
     ;; sublist of wᵢ element is missing, so it does not really have a meaningful
     ;; length for the ...
     (check-exn
-     #rx"attribute contains non-syntax value.*#f"
+     #rx"attribute contains non-(syntax|list) value.*#f"
      (λ ()
        (convert-compile-time-error
         (check-equal? (syntax->datum
