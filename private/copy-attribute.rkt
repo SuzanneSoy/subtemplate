@@ -3,7 +3,8 @@
 (provide copy-raw-syntax-attribute
          attribute-val/c)
 
-(require stxparse-info/current-pvars
+(require version-case
+         stxparse-info/current-pvars
          phc-toolkit/untyped
          stxparse-info/parse
          (for-syntax "optcontract.rkt"
@@ -11,11 +12,19 @@
                      phc-toolkit/untyped
                      racket/function
                      stxparse-info/parse)
-
-
-
-         (only-in stxparse-info/parse/private/residual make-attribute-mapping)
          (for-syntax (only-in auto-syntax-e/utils make-auto-pvar)))
+(version-case
+ [(version< (version) "6.90.0.24")
+  (require (only-in stxparse-info/parse/private/residual
+                    [make-attribute-mapping
+                     compat-make-attribute-mapping]))]
+ [else
+  (require (only-in stxparse-info/parse/private/residual ;; must be an absolute path
+                    check-attr-value
+                    [attribute-mapping -make-attribute-mapping]))
+  (define-for-syntax (compat-make-attribute-mapping valvar name depth syntax?)
+    (-make-attribute-mapping
+     valvar name depth (if syntax? #f (quote-syntax check-attr-value))))])
 
 (begin-for-syntax
   (define/contract (nest-map f last n)
@@ -69,7 +78,7 @@
         #'(begin
             (define vtmp attr-value);; TODO: if already an id, no need to copy it (unless the id is mutated)
             (define-syntax stmp
-              (make-attribute-mapping (quote-syntax vtmp)
+              (compat-make-attribute-mapping (quote-syntax vtmp)
                                       'name 'ellipsis-depth 'syntax?))
             (define-syntax name
               (make-auto-pvar 'ellipsis-depth (quote-syntax stmp)))
