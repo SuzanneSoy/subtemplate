@@ -10,7 +10,7 @@
 (require stxparse-info/current-pvars
          phc-toolkit/untyped
          subtemplate/private/copy-attribute
-         (prefix-in - syntax/parse/private/residual)
+         version-case
          racket/stxparam
          "lifted-variables-communication.rkt"
          (for-syntax "optcontract.rkt"
@@ -23,6 +23,12 @@
                      racket/private/sc
                      scope-operations
                      racket/string))
+
+(version-case
+ [(version< (version) "6.90.0.24")
+  (require (prefix-in - syntax/parse/private/residual))]
+ [else
+  (require (prefix-in - racket/private/template))])
 
 (define-for-syntax x-pvar-scope (make-syntax-introducer))
 (define-for-syntax x-pvar-present-marker (make-syntax-introducer))
