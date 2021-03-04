@@ -16,4 +16,4 @@
 (define scribblings '(("scribblings/subtemplate.scrbl" () (parsing-library))))
 (define pkg-desc "Various enhancements on syntax templates")
 (define version "1.2")
-(define pkg-authors '("Georges Dupéron"))
+(define pkg-authors '("Suzanne Soy"))

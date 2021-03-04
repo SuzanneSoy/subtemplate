@@ -8,7 +8,7 @@
                     (subtract-in racket/base subtemplate)]]
 
 @title[#:style (with-html5 manual-doc-style)]{Subtemplate}
-@author[@author+email["Georges Dupéron" "georges.duperon@gmail.com"]]
+@author[@author+email["Suzanne Soy" "racket@suzanne.soy"]]
 
 This library should be considered experimental. Although most of the syntax
 should work in the same way in future versions, the behaviour of some corner
