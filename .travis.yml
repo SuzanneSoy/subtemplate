@@ -8,22 +8,22 @@ env:
     - PATH="$RACKET_DIR/bin:$PATH"
   matrix:
     # RACKET_VERSION is an argument to install-racket.sh
-    - RACKET_VERSION=6.8                COVER=false
-    - RACKET_VERSION=6.9                COVER=true
-    - RACKET_VERSION=6.10               COVER=true
-    - RACKET_VERSION=6.10.1             COVER=true
-    - RACKET_VERSION=6.11               COVER=true
-    - RACKET_VERSION=6.12               COVER=true
-    - RACKET_VERSION=7.0                COVER=true
-    - RACKET_VERSION=7.1                COVER=true
-    - RACKET_VERSION=7.2                COVER=true
-    - RACKET_VERSION=7.3                COVER=true
-    - RACKET_VERSION=7.4                COVER=true
-    - RACKET_VERSION=7.5                COVER=true
-    - RACKET_VERSION=7.6                COVER=true
-    - RACKET_VERSION=7.7                COVER=true
-    - RACKET_VERSION=7.8                COVER=true
-    - RACKET_VERSION=7.9                COVER=true
+#    - RACKET_VERSION=6.8                COVER=false
+#    - RACKET_VERSION=6.9                COVER=true
+#    - RACKET_VERSION=6.10               COVER=true
+#    - RACKET_VERSION=6.10.1             COVER=true
+#    - RACKET_VERSION=6.11               COVER=true
+#    - RACKET_VERSION=6.12               COVER=true
+#    - RACKET_VERSION=7.0                COVER=true
+#    - RACKET_VERSION=7.1                COVER=true
+#    - RACKET_VERSION=7.2                COVER=true
+#    - RACKET_VERSION=7.3                COVER=true
+#    - RACKET_VERSION=7.4                COVER=true
+#    - RACKET_VERSION=7.5                COVER=true
+#    - RACKET_VERSION=7.6                COVER=true
+#    - RACKET_VERSION=7.7                COVER=true
+#    - RACKET_VERSION=7.8                COVER=true
+#    - RACKET_VERSION=7.9                COVER=true
     - RACKET_VERSION=8.0                COVER=true
     - RACKET_VERSION=8.0    RACKET_CS=1 COVER=true
     - RACKET_VERSION=HEAD               COVER=true
@@ -33,7 +33,8 @@ before_install:
 - if $COVER; then raco pkg install --deps search-auto doc-coverage cover cover-codecov; fi # or cover-coveralls
 
 install:
-- raco pkg install --deps search-auto -j 2
+- git clone https://github.com/jsmaniac/stxparse-info.git -b main ../stxparse-info
+- raco pkg install --deps search-auto -j 2 ../stxparse-info $PWD
 
 script:
 - raco test -r -p "$(basename "$TRAVIS_BUILD_DIR")"
