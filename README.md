@@ -1,4 +1,4 @@
-[![Build Status,](https://img.shields.io/travis/jsmaniac/subtemplate/master.svg)](https://travis-ci.org/jsmaniac/subtemplate)
+[![Build Status,](https://img.shields.io/travis/jsmaniac/subtemplate/main.svg)](https://travis-ci.org/jsmaniac/subtemplate)
 [![Build Stats,](https://img.shields.io/website-stats-stats%20unavailable-blue-red/http/jsmaniac.github.io/travis-stats/.svg?label=build)](http://jsmaniac.github.io/travis-stats/#jsmaniac/subtemplate)
 [![Online Documentation,](https://img.shields.io/website-online-offline-blue-red/http/docs.racket-lang.org/subtemplate/.svg?label=docs)](http://docs.racket-lang.org/subtemplate/)
 [![Maintained as of 2018,](https://img.shields.io/maintenance/yes/2018.svg)](https://github.com/jsmaniac/subtemplate/issues)
